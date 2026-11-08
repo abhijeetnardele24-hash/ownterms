@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: ownterms-app
+    env: node
+    plan: starter
+    region: oregon
+    buildCommand: pnpm install --frozen-lockfile && pnpm run build
+    startCommand: pnpm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PAYPAL_API_BASE
+        value: https://api-m.sandbox.paypal.com
+      - key: AI_EXTRACTION_MODEL
+        value: gemini-2.5-flash
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: NEXT_PUBLIC_PAYPAL_CLIENT_ID
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: PAYPAL_WEBHOOK_ID
+        sync: false
