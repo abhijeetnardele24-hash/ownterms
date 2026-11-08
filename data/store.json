@@ -281,8 +281,52 @@
       }
     ]
   },
-  "receipts": {},
+  "receipts": {
+    "rcpt_1794170665354_oh73f": {
+      "receiptId": "rcpt_1794170665354_oh73f",
+      "assetId": "asset_night_market_01",
+      "assetTitle": "Night Market Signals",
+      "creatorName": "Mira Rao",
+      "creatorHandle": "@mirarao.lens",
+      "licenseTier": "commercial_social",
+      "licenseName": "Commercial Social",
+      "pricePaidCents": 6900,
+      "currency": "USD",
+      "grantedChannels": [
+        "instagram_ad"
+      ],
+      "grantedDurationDays": 30,
+      "grantedTerritories": [
+        "IN",
+        "SG"
+      ],
+      "commercialUse": true,
+      "aiTrainingAllowed": false,
+      "derivativeModificationsAllowed": true,
+      "redistributionAllowed": false,
+      "paypalOrderId": "ORD_SANDBOX_1794170665352",
+      "paypalCaptureId": "CAP_SANDBOX_1794170665354",
+      "payeeEmail": "mira.rao.creator@example.com",
+      "issuedAt": "2026-11-08T20:44:25.354Z",
+      "validUntil": "2027-01-07T20:44:25.354Z",
+      "canonicalSha256": "917675fda8b9ec27eef8699857f0647fb9ec8384478be3dc3b804cbb439674ed"
+    }
+  },
   "ledger": [
+    {
+      "id": "ledg_1794170665357",
+      "timestamp": "2026-11-08T20:44:25.354Z",
+      "assetId": "asset_night_market_01",
+      "assetTitle": "Night Market Signals",
+      "licenseTier": "Commercial Social",
+      "amountUsd": 69,
+      "channel": "instagram_ad",
+      "territory": "IN, SG",
+      "agentPrompt": "Licensed via PayPal Sandbox Order ORD_SANDBOX_1794170665352",
+      "paypalCaptureId": "CAP_SANDBOX_1794170665354",
+      "receiptHash": "917675fda8b9ec27eef8699857f0647fb9ec8384478be3dc3b804cbb439674ed",
+      "status": "ACTIVE"
+    },
     {
       "id": "ledg_001",
       "timestamp": "2026-11-08T14:22:10.000Z",
