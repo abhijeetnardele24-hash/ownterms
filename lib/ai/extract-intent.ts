@@ -26,7 +26,7 @@ CRITICAL SECURITY AND ARCHITECTURAL RULES:
 
 export async function extractIntendedUse(
   rawPrompt: string,
-  options: { forceFallback?: boolean } = {}
+  options: { forceFallback?: boolean; timeoutMs?: number } = {}
 ): Promise<IntendedUseFact> {
   const apiKey = process.env.GEMINI_API_KEY;
   const useFixture =
@@ -42,10 +42,12 @@ export async function extractIntendedUse(
   try {
     const model = process.env.AI_EXTRACTION_MODEL || "gemini-2.5-flash";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const timeoutMs = options.timeoutMs ?? 10000;
 
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(timeoutMs),
       body: JSON.stringify({
         systemInstruction: {
           parts: [{ text: SYSTEM_PROMPT }],
