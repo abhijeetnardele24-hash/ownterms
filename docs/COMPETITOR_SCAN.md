@@ -25,6 +25,6 @@ Autonomous agents (in marketing, design, code generation, and synthetic media) c
 | **Machine-Readable Scope Limits** | Broad human-readable legal PDFs | N/A | **Granular schema (Channels, Days, Territories, AI restrictions)** |
 | **Separation of Intent & Finance** | N/A | High risk of prompt injection | **Guaranteed (AI extracts facts; deterministic policy prices)** |
 | **Cryptographic Rights Receipt** | Static PDF invoice | Email notification | **Canonical SHA-256 Hash verifiable anywhere** |
-| **Creator Rights & Revenue Control Room** | Opaque monthly royalty reports | Basic stripe/paypal dashboard | **AG Grid / AG Studio with Rights Coverage visual matrix** |
+| **Creator Rights & Revenue Control Room** | Opaque monthly royalty reports | Basic stripe/paypal dashboard | **AG Grid Community with Rights Coverage visual matrix** |
 | **PayPal Sandbox Settlement** | Proprietary internal billing | Basic payment button | **Orders v2 REST + Read-back verification + Webhook integrity** |
 

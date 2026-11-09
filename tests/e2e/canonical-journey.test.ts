@@ -15,6 +15,10 @@ test.describe("OwnTerms - Canonical Hackathon Demo Journey (FIXTURE Mode)", () =
     await page.goto("/");
     await expect(page).toHaveTitle(/OwnTerms/);
     await expect(page.locator("h1")).toContainText("Your agent can use it—");
+
+    // Verify local demo asset image is loaded and visible
+    const heroImage = page.locator("img[alt='Night Market Signals']").first();
+    await expect(heroImage).toBeVisible();
     await page.screenshot({ path: path.join(screenshotsDir, "01-home-catalog-1440.png") });
 
     // Click on Flagship Demo Asset
@@ -23,10 +27,10 @@ test.describe("OwnTerms - Canonical Hackathon Demo Journey (FIXTURE Mode)", () =
 
     // 2. Asset Detail & Intent Studio
     await expect(page.locator("h1")).toContainText("Night Market Signals");
-    await expect(page.getByText("Mira Rao")).toBeVisible();
+    await expect(page.getByText("Mira Rao (Demo Persona)")).toBeVisible();
 
     // Verify canonical prompt is loaded
-    const textarea = page.locator("textarea");
+    const textarea = page.locator("textarea#intent-prompt");
     await expect(textarea).toHaveValue(/paid Instagram campaign/);
 
     // Click "Extract Rights Scope with AI"
@@ -52,13 +56,13 @@ test.describe("OwnTerms - Canonical Hackathon Demo Journey (FIXTURE Mode)", () =
     await expect(commercialCard).toContainText("$69.00");
     await page.screenshot({ path: path.join(screenshotsDir, "03-policy-matrix-1440.png") });
 
-    // 4. Execute PayPal Checkout
-    const payBtn = commercialCard.locator("button:has-text('Pay with')");
+    // 4. Execute Fixture Checkout
+    const payBtn = commercialCard.locator("button:has-text('Settle License')");
     await payBtn.click();
 
     // 5. Verify Navigation to Verifiable Rights Receipt
     await expect(page).toHaveURL(/.*\/receipt\/rcpt_/, { timeout: 15000 });
-    await expect(page.locator("h1")).toContainText("Certificate of Intellectual Property License");
+    await expect(page.locator("h1")).toContainText("Machine-Readable Rights Receipt");
     await expect(page.getByText("Cryptographic Integrity Verified")).toBeVisible();
     await expect(page.getByText("$69.00")).toBeVisible();
     await page.screenshot({ path: path.join(screenshotsDir, "04-rights-receipt-1440.png") });
@@ -79,9 +83,9 @@ test.describe("OwnTerms - Canonical Hackathon Demo Journey (FIXTURE Mode)", () =
     await expect(page.locator("h1")).toContainText("Creator Rights & Revenue Control Room");
 
     // Verify Custom "Rights Coverage" Matrix Widget is present
-    await expect(page.getByText("Original Sponsor Widget: Global Rights Coverage Matrix")).toBeVisible();
+    await expect(page.getByText("Rights Coverage Matrix")).toBeVisible();
     await expect(page.getByText("Channel \\ Region")).toBeVisible();
-    await expect(page.getByRole("cell", { name: "Instagram Ads" })).toBeVisible();
+    await expect(page.getByText("Instagram Ads").first()).toBeVisible();
     await expect(page.getByRole("columnheader", { name: "India (IN)" })).toBeVisible();
 
     // Verify AG Grid table is loaded

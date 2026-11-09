@@ -111,9 +111,11 @@ export type CompatibilityResult = z.infer<typeof CompatibilityResultSchema>;
 
 export const PurchaseIntentStateSchema = z.enum([
   "CREATED",
-  "AUTHORIZED",
-  "CAPTURED",
-  "SETTLED",
+  "ORDER_CREATED",
+  "PAYER_APPROVED",
+  "CAPTURE_PENDING",
+  "CAPTURE_VERIFIED",
+  "RECEIPT_ISSUED",
   "FAILED",
   "CANCELLED",
 ]);
@@ -164,6 +166,9 @@ export const RightsReceiptPayloadSchema = z.object({
   paypalOrderId: z.string(),
   paypalCaptureId: z.string(),
   payeeEmail: z.string(),
+  policyHash: z.string().optional(),
+  purchasePayloadHash: z.string().optional(),
+  provenance: z.enum(["LIVE_SANDBOX", "FIXTURE", "SIMULATED"]).optional().default("FIXTURE"),
   issuedAt: z.string(),
   validUntil: z.string(),
 });

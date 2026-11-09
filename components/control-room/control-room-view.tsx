@@ -11,6 +11,11 @@ import {
 } from "ag-grid-community";
 import { LedgerEntry } from "@/lib/types/domain";
 import {
+  COVERAGE_CHANNELS,
+  COVERAGE_TERRITORIES,
+  buildRightsCoverageMatrix,
+} from "@/lib/analytics/coverage-matrix";
+import {
   TableProperties,
   ShieldCheck,
   TrendingUp,
@@ -20,13 +25,11 @@ import {
   ExternalLink,
   CheckCircle2,
   PieChart,
+  Filter,
 } from "lucide-react";
 
-// Register all community features
+// Register AG Grid Community modules
 ModuleRegistry.registerModules([AllCommunityModule]);
-
-const COVERAGE_CHANNELS = ["Instagram Ads", "TikTok Ads", "YouTube Ads", "Web Embed", "Global Campaign"];
-const COVERAGE_TERRITORIES = ["India (IN)", "Singapore (SG)", "United States (US)", "United Kingdom (GB)", "Global (*)"];
 
 interface Props {
   initialLedger: LedgerEntry[];
@@ -38,12 +41,45 @@ interface Props {
   };
 }
 
+const usdFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+});
+
 export function ControlRoomView({ initialLedger, initialStats }: Props) {
   const [ledger] = useState<LedgerEntry[]>(initialLedger);
   const [quickFilter, setQuickFilter] = useState("");
+  const [provenanceFilter, setProvenanceFilter] = useState<string>("ALL");
   const [selectedCell, setSelectedCell] = useState<{ channel: string; territory: string; count: number } | null>(null);
 
-  // Column definitions for AG Grid
+  // Filtered rows for grid and metrics
+  const filteredLedger = useMemo(() => {
+    if (provenanceFilter === "ALL") return ledger;
+    return ledger.filter((entry) => entry.provenance === provenanceFilter);
+  }, [ledger, provenanceFilter]);
+
+  // Provenance revenue breakdown
+  const revenueBreakdown = useMemo(() => {
+    let liveRevenue = 0;
+    let fixtureRevenue = 0;
+    let seededRevenue = 0;
+
+    for (const entry of ledger) {
+      const amount = typeof entry.amountUsd === "number" ? entry.amountUsd : parseFloat(entry.amountUsd) || 0;
+      if (entry.provenance === "LIVE_SANDBOX") {
+        liveRevenue += amount;
+      } else if (entry.provenance === "FIXTURE") {
+        fixtureRevenue += amount;
+      } else {
+        seededRevenue += amount;
+      }
+    }
+
+    return { liveRevenue, fixtureRevenue, seededRevenue };
+  }, [ledger]);
+
+  // Column definitions for AG Grid Community
   const colDefs = useMemo<ColDef<LedgerEntry>[]>(
     () => [
       {
@@ -70,7 +106,7 @@ export function ControlRoomView({ initialLedger, initialStats }: Props) {
           return (
             <Link
               href={`/assets/${p.data.assetId}`}
-              className="text-[#1769E0] font-semibold hover:underline flex items-center gap-1"
+              className="text-[#1769E0] font-semibold hover:underline flex items-center gap-1 focus-visible:outline-2 focus-visible:outline-[#1769E0]"
             >
               <span>{p.value}</span>
               <ExternalLink className="w-3 h-3 opacity-70" />
@@ -104,7 +140,7 @@ export function ControlRoomView({ initialLedger, initialStats }: Props) {
         width: 130,
         valueFormatter: (p) => {
           const num = typeof p.value === "number" ? p.value : parseFloat(p.value);
-          return isNaN(num) ? "$0.00" : `$${num.toFixed(2)}`;
+          return isNaN(num) ? "$0.00" : usdFormatter.format(num);
         },
         cellClass: "font-mono font-bold text-[#091A2A]",
       },
@@ -126,7 +162,7 @@ export function ControlRoomView({ initialLedger, initialStats }: Props) {
       },
       {
         field: "receiptHash",
-        headerName: "Cryptographic Digest",
+        headerName: "SHA-256 Digest",
         width: 210,
         cellRenderer: (p: ICellRendererParams<LedgerEntry>) => {
           if (!p.value) return null;
@@ -134,7 +170,7 @@ export function ControlRoomView({ initialLedger, initialStats }: Props) {
           return (
             <Link
               href={`/receipt/verify`}
-              className="font-mono text-[11px] text-[#1769E0] hover:underline flex items-center gap-1"
+              className="font-mono text-[11px] text-[#1769E0] hover:underline flex items-center gap-1 focus-visible:outline-2 focus-visible:outline-[#1769E0]"
               title="Click to independently verify on receipt inspector"
             >
               <ShieldCheck className="w-3 h-3 text-[#16805B]" />
@@ -146,7 +182,7 @@ export function ControlRoomView({ initialLedger, initialStats }: Props) {
       {
         field: "provenance",
         headerName: "Provenance",
-        width: 140,
+        width: 150,
         cellRenderer: (p: ICellRendererParams) => {
           const val = p.value || "SEEDED";
           const isLive = val === "LIVE_SANDBOX";
@@ -191,38 +227,13 @@ export function ControlRoomView({ initialLedger, initialStats }: Props) {
     []
   );
 
-  // Compute Data for the Custom "Rights Coverage" Matrix Widget
+  // Compute Data for the Rights Coverage Matrix Widget using strictly isolated matching
   const coverageMatrix = useMemo(() => {
-    const matrix: Record<string, Record<string, number>> = {};
-    for (const ch of COVERAGE_CHANNELS) {
-      matrix[ch] = {};
-      for (const t of COVERAGE_TERRITORIES) {
-        matrix[ch][t] = 0;
-      }
-    }
-
-    // Populate matrix from real ledger entries
-    for (const entry of ledger) {
-      const eCh = entry.channel.toLowerCase();
-      const eT = entry.territory.toLowerCase();
-
-      for (const ch of COVERAGE_CHANNELS) {
-        const chKey = ch.toLowerCase().split(" ")[0];
-        if (eCh.includes(chKey) || eCh.includes("instagram") || eCh.includes("social")) {
-          for (const t of COVERAGE_TERRITORIES) {
-            const tKey = t.toLowerCase().split(" ")[0];
-            if (eT.includes(tKey) || eT.includes("india") || eT.includes("singapore") || eT.includes("global")) {
-              matrix[ch][t] = (matrix[ch][t] || 0) + 1;
-            }
-          }
-        }
-      }
-    }
-    return matrix;
-  }, [ledger]);
+    return buildRightsCoverageMatrix(filteredLedger);
+  }, [filteredLedger]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+    <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
       {/* Page Title & Context */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -234,31 +245,42 @@ export function ControlRoomView({ initialLedger, initialStats }: Props) {
             Creator Rights & Revenue Control Room
           </h1>
           <p className="text-xs text-[#64748B] mt-1">
-            Multi-column audit ledger, machine-settled transactions, and global IP distribution telemetry.
+            Audited transaction ledger, machine-negotiated licenses, and global rights distribution telemetry.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-[#475569] bg-[#F1EFEA] border border-[#E4E2DB] px-3 py-1.5 rounded-lg flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-[#16805B]" />
-            <span>Audited Transaction Ledger</span>
+            <span>Persistent SQLite Ledger</span>
           </span>
         </div>
       </div>
 
       {/* KPI Cards Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="p-5 rounded-xl bg-white border border-[#E4E2DB] shadow-sm space-y-1">
+        <div className="p-5 rounded-xl bg-white border border-[#E4E2DB] shadow-sm space-y-2">
           <div className="flex items-center justify-between text-xs text-[#64748B]">
             <span>Gross Revenue</span>
             <TrendingUp className="w-4 h-4 text-[#16805B]" />
           </div>
           <span className="text-2xl font-black text-[#091A2A] block">
-            ${initialStats.grossRevenue.toFixed(2)}
+            {usdFormatter.format(initialStats.grossRevenue)}
           </span>
-          <span className="text-[11px] text-[#16805B] font-semibold">
-            PayPal Orders v2 Schema
-          </span>
+          <div className="text-[11px] text-[#475569] border-t border-[#F1EFEA] pt-1.5 space-y-0.5">
+            <div className="flex justify-between">
+              <span className="text-emerald-700 font-semibold">Live Sandbox:</span>
+              <span className="font-mono">{usdFormatter.format(revenueBreakdown.liveRevenue)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-amber-700 font-semibold">Fixture:</span>
+              <span className="font-mono">{usdFormatter.format(revenueBreakdown.fixtureRevenue)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-600">Seeded:</span>
+              <span className="font-mono">{usdFormatter.format(revenueBreakdown.seededRevenue)}</span>
+            </div>
+          </div>
         </div>
 
         <div className="p-5 rounded-xl bg-white border border-[#E4E2DB] shadow-sm space-y-1">
@@ -293,7 +315,7 @@ export function ControlRoomView({ initialLedger, initialStats }: Props) {
             <Layers className="w-4 h-4 text-[#D97706]" />
           </div>
           <span className="text-2xl font-black text-[#091A2A] block">
-            Deterministic
+            PayPal Orders v2
           </span>
           <span className="text-[11px] text-[#16805B] font-semibold">
             Integer Minor Cents & SHA-256
@@ -301,14 +323,14 @@ export function ControlRoomView({ initialLedger, initialStats }: Props) {
         </div>
       </div>
 
-      {/* Original Custom Widget: "Rights Coverage" Visual Matrix */}
+      {/* Rights Coverage Matrix */}
       <div className="p-6 rounded-xl bg-white border border-[#E4E2DB] shadow-sm space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
               <PieChart className="w-4 h-4 text-[#1769E0]" />
               <h2 className="font-extrabold text-base text-[#091A2A]">
-                Original Sponsor Widget: Global Rights Coverage Matrix
+                Rights Coverage Matrix
               </h2>
             </div>
             <p className="text-xs text-[#64748B] mt-0.5">
@@ -330,14 +352,14 @@ export function ControlRoomView({ initialLedger, initialStats }: Props) {
 
         {/* Matrix Grid */}
         <div className="overflow-x-auto">
-          <table className="w-full text-xs border-collapse">
+          <table className="w-full text-xs border-collapse" aria-label="Global Rights Coverage Matrix">
             <thead>
               <tr className="border-b border-[#E4E2DB]">
-                <th className="text-left py-2.5 px-3 font-bold text-[#64748B] uppercase tracking-wider text-[11px] bg-[#F8FAFC]">
+                <th scope="col" className="text-left py-2.5 px-3 font-bold text-[#64748B] uppercase tracking-wider text-[11px] bg-[#F8FAFC]">
                   Channel \ Region
                 </th>
                 {COVERAGE_TERRITORIES.map((t) => (
-                  <th key={t} className="text-center py-2.5 px-3 font-bold text-[#091A2A] bg-[#F8FAFC]">
+                  <th scope="col" key={t} className="text-center py-2.5 px-3 font-bold text-[#091A2A] bg-[#F8FAFC]">
                     {t}
                   </th>
                 ))}
@@ -346,9 +368,9 @@ export function ControlRoomView({ initialLedger, initialStats }: Props) {
             <tbody>
               {COVERAGE_CHANNELS.map((ch) => (
                 <tr key={ch} className="border-b border-[#F1EFEA] hover:bg-[#FBFBFA]">
-                  <td className="py-2.5 px-3 font-semibold text-[#091A2A]">
+                  <th scope="row" className="py-2.5 px-3 font-semibold text-[#091A2A] text-left">
                     {ch}
-                  </td>
+                  </th>
                   {COVERAGE_TERRITORIES.map((t) => {
                     const count = coverageMatrix[ch]?.[t] || 0;
                     const isActive = count > 0;
@@ -396,27 +418,51 @@ export function ControlRoomView({ initialLedger, initialStats }: Props) {
               Full Transaction Audit Ledger
             </h2>
             <p className="text-xs text-[#64748B]">
-              Every machine-negotiated license, server-held price, and cryptographic hash recorded in real-time.
+              Every machine-negotiated license, server-held price, and cryptographic hash recorded in persistent SQLite.
             </p>
           </div>
 
-          {/* Quick Filter Search Input */}
-          <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 text-[#94A3B8] absolute left-3 top-2.5" />
-            <input
-              type="text"
-              value={quickFilter}
-              onChange={(e) => setQuickFilter(e.target.value)}
-              placeholder="Search by asset, hash, channel..."
-              className="w-full pl-9 pr-3 py-1.5 rounded-lg border border-[#CBD5E1] text-xs text-[#091A2A] focus:outline-none focus:ring-2 focus:ring-[#1769E0]"
-            />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            {/* Provenance Filter Tabs */}
+            <div className="flex items-center gap-1 bg-[#F1EFEA] p-1 rounded-lg border border-[#E4E2DB] text-xs font-semibold">
+              <Filter className="w-3.5 h-3.5 text-[#64748B] ml-1.5" />
+              {(["ALL", "LIVE_SANDBOX", "FIXTURE", "SEEDED"] as const).map((prov) => (
+                <button
+                  key={prov}
+                  type="button"
+                  onClick={() => setProvenanceFilter(prov)}
+                  className={`px-2.5 py-1 rounded text-[11px] transition-colors ${
+                    provenanceFilter === prov
+                      ? "bg-white text-[#091A2A] shadow-sm font-bold"
+                      : "text-[#64748B] hover:text-[#091A2A]"
+                  }`}
+                >
+                  {prov === "ALL" ? "All" : prov}
+                </button>
+              ))}
+            </div>
+
+            {/* Quick Filter Search Input */}
+            <div className="relative w-full sm:w-64">
+              <Search className="w-4 h-4 text-[#94A3B8] absolute left-3 top-2.5" />
+              <input
+                type="text"
+                id="control-room-search"
+                name="controlRoomSearch"
+                aria-label="Filter transaction ledger"
+                value={quickFilter}
+                onChange={(e) => setQuickFilter(e.target.value)}
+                placeholder="Search asset, hash, channel..."
+                className="w-full pl-9 pr-3 py-1.5 rounded-lg border border-[#CBD5E1] text-xs text-[#091A2A] focus:outline-none focus:ring-2 focus:ring-[#1769E0]"
+              />
+            </div>
           </div>
         </div>
 
         {/* AG Grid Container */}
         <div className="ag-theme-quartz w-full h-[400px] rounded-lg overflow-hidden border border-[#E4E2DB]">
           <AgGridReact<LedgerEntry>
-            rowData={ledger}
+            rowData={filteredLedger}
             columnDefs={colDefs}
             defaultColDef={defaultColDef}
             quickFilterText={quickFilter}
@@ -427,7 +473,6 @@ export function ControlRoomView({ initialLedger, initialStats }: Props) {
           />
         </div>
       </div>
-    </div>
+    </main>
   );
 }
-

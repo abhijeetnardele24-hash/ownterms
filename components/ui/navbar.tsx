@@ -65,10 +65,19 @@ export function Navbar() {
           })}
         </nav>
 
-        {/* Sandbox Status Badge */}
-        <div className="hidden lg:flex items-center gap-2 text-xs font-medium text-[#475569] bg-[#F1EFEA] border border-[#CBD5E1] px-3 py-1 rounded-full">
-          <span className="w-2 h-2 rounded-full bg-[#16805B]" />
-          <span>PayPal Orders v2 (Sandbox Mode)</span>
+        {/* Mode Status Badge */}
+        <div className="hidden lg:flex items-center gap-2 text-xs font-semibold text-[#475569] bg-[#F1EFEA] border border-[#CBD5E1] px-3 py-1 rounded-full">
+          {process.env.NEXT_PUBLIC_PAYPAL_MODE === "sandbox" ? (
+            <>
+              <span className="w-2 h-2 rounded-full bg-[#16805B]" aria-hidden="true" />
+              <span>PayPal Orders v2 · Sandbox Mode</span>
+            </>
+          ) : (
+            <>
+              <span className="w-2 h-2 rounded-full bg-[#D97706]" aria-hidden="true" />
+              <span>Runtime: FIXTURE (Deterministic Judge Mode)</span>
+            </>
+          )}
         </div>
       </div>
     </header>

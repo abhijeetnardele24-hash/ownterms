@@ -218,4 +218,56 @@ describe("Security & Adversarial Regression Test Suite", () => {
     const tamperedAi = { ...receipt, aiTrainingAllowed: true };
     expect(verifyRightsReceipt(tamperedAi).valid).toBe(false);
   });
+
+  // Regression 9: Order creation sets state strictly to ORDER_CREATED
+  it("initializes order state strictly to ORDER_CREATED (never prematurely AUTHORIZED)", async () => {
+    const createReq = new NextRequest("http://localhost:3000/api/checkout/create", {
+      method: "POST",
+      body: JSON.stringify({ assetId, tierId: "tier_nm_commercial" }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const createRes = await createCheckout(createReq);
+    expect(createRes.status).toBe(200);
+    const { purchaseIntentId } = await createRes.json();
+
+    const { store } = await import("@/lib/store/repository");
+    const intent = store.getPurchaseIntent(purchaseIntentId);
+    expect(intent?.state).toBe("ORDER_CREATED");
+  });
+
+  // Regression 10: Concurrent captures are strictly idempotent and yield identical receipt
+  it("handles concurrent capture calls with strict idempotency and single receipt issuance", async () => {
+    const createReq = new NextRequest("http://localhost:3000/api/checkout/create", {
+      method: "POST",
+      body: JSON.stringify({ assetId, tierId: "tier_nm_commercial" }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const createRes = await createCheckout(createReq);
+    const { orderId, purchaseIntentId } = await createRes.json();
+
+    const captureReqA = new NextRequest(`http://localhost:3000/api/checkout/${orderId}/capture`, {
+      method: "POST",
+      body: JSON.stringify({ purchaseIntentId }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const captureReqB = new NextRequest(`http://localhost:3000/api/checkout/${orderId}/capture`, {
+      method: "POST",
+      body: JSON.stringify({ purchaseIntentId }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const [resA, resB] = await Promise.all([
+      captureCheckout(captureReqA, { params: Promise.resolve({ orderId }) }),
+      captureCheckout(captureReqB, { params: Promise.resolve({ orderId }) }),
+    ]);
+
+    expect(resA.status).toBe(200);
+    expect(resB.status).toBe(200);
+
+    const dataA = await resA.json();
+    const dataB = await resB.json();
+
+    expect(dataA.receipt.receiptId).toBe(dataB.receipt.receiptId);
+    expect(dataA.receipt.canonicalSha256).toBe(dataB.receipt.canonicalSha256);
+  });
 });

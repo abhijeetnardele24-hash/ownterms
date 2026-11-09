@@ -53,8 +53,8 @@ export async function POST(req: NextRequest) {
       const orderId = rawBody?.resource?.id;
       if (orderId) {
         const intent = store.getPurchaseIntentByOrderId(orderId);
-        if (intent && intent.state === "CREATED") {
-          intent.state = "AUTHORIZED";
+        if (intent && (intent.state === "CREATED" || intent.state === "ORDER_CREATED")) {
+          intent.state = "PAYER_APPROVED";
           store.savePurchaseIntent(intent);
         }
       }
@@ -62,8 +62,8 @@ export async function POST(req: NextRequest) {
       const orderId = rawBody?.resource?.supplementary_data?.related_ids?.order_id;
       if (orderId) {
         const intent = store.getPurchaseIntentByOrderId(orderId);
-        if (intent && intent.state !== "SETTLED") {
-          intent.state = "CAPTURED";
+        if (intent && intent.state !== "RECEIPT_ISSUED") {
+          intent.state = "CAPTURE_VERIFIED";
           store.savePurchaseIntent(intent);
         }
       }

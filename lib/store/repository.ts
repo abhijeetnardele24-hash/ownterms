@@ -5,6 +5,7 @@ import {
   RightsReceipt,
   LedgerEntry,
   PurchaseIntent,
+  PurchaseIntentState,
   PurchaseIntentSchema,
   RightsReceiptSchema,
   LedgerEntrySchema,
@@ -98,6 +99,94 @@ export class StoreRepository {
     return JSON.parse(row.data) as PurchaseIntent;
   }
 
+  public updatePurchaseIntentState(id: string, state: PurchaseIntentState): boolean {
+    const existing = this.getPurchaseIntent(id);
+    if (!existing) return false;
+    existing.state = state;
+    this.savePurchaseIntent(existing);
+    return true;
+  }
+
+  // Atomic Purchase Settlement & Receipt Minting
+  public settlePurchaseAndMintReceipt(
+    receipt: RightsReceipt,
+    purchaseIntent: PurchaseIntent
+  ): { success: boolean; idempotent: boolean; receipt: RightsReceipt } {
+    const validatedReceipt = RightsReceiptSchema.parse(receipt);
+
+    // Atomically check, insert receipt, update purchase intent, and write ledger
+    const runTransaction = db.transaction(() => {
+      // 1. Idempotency check: if receipt already exists for this orderId, return it
+      const existingRow = db
+        .prepare("SELECT data FROM receipts WHERE order_id = ?")
+        .get(validatedReceipt.paypalOrderId) as { data: string } | undefined;
+
+      if (existingRow) {
+        return {
+          success: true,
+          idempotent: true,
+          receipt: JSON.parse(existingRow.data) as RightsReceipt,
+        };
+      }
+
+      // 2. Insert receipt with strictly INSERT (enforce unique order_id and capture_id)
+      const receiptStmt = db.prepare(`
+        INSERT INTO receipts (receipt_id, order_id, capture_id, canonical_hash, data, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `);
+      receiptStmt.run(
+        validatedReceipt.receiptId,
+        validatedReceipt.paypalOrderId,
+        validatedReceipt.paypalCaptureId,
+        validatedReceipt.canonicalSha256,
+        JSON.stringify(validatedReceipt),
+        validatedReceipt.issuedAt
+      );
+
+      // 3. Transition purchase intent to RECEIPT_ISSUED
+      purchaseIntent.state = "RECEIPT_ISSUED";
+      purchaseIntent.paypalCaptureId = validatedReceipt.paypalCaptureId;
+      const intentStmt = db.prepare(`
+        UPDATE purchase_intents
+        SET state = ?, data = ?
+        WHERE id = ?
+      `);
+      intentStmt.run(
+        purchaseIntent.state,
+        JSON.stringify(purchaseIntent),
+        purchaseIntent.id
+      );
+
+      // 4. Append to creator ledger
+      const ledgerEntry: LedgerEntry = {
+        id: `ledg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        timestamp: validatedReceipt.issuedAt,
+        assetId: validatedReceipt.assetId,
+        assetTitle: validatedReceipt.assetTitle,
+        licenseTier: validatedReceipt.licenseName,
+        amountUsd: validatedReceipt.pricePaidCents / 100,
+        channel: validatedReceipt.grantedChannels.join(", "),
+        territory: validatedReceipt.grantedTerritories.join(", "),
+        agentPrompt: `Licensed via PayPal Order ${validatedReceipt.paypalOrderId}`,
+        paypalCaptureId: validatedReceipt.paypalCaptureId,
+        receiptHash: validatedReceipt.canonicalSha256,
+        provenance: purchaseIntent.provenance,
+        status: "ACTIVE",
+      };
+
+      const ledgerStmt = db.prepare("INSERT INTO ledger (id, data, timestamp) VALUES (?, ?, ?)");
+      ledgerStmt.run(ledgerEntry.id, JSON.stringify(ledgerEntry), ledgerEntry.timestamp);
+
+      return {
+        success: true,
+        idempotent: false,
+        receipt: validatedReceipt,
+      };
+    });
+
+    return runTransaction();
+  }
+
   // Receipts (Durable SQLite)
   public saveReceipt(
     receipt: RightsReceipt,
@@ -105,7 +194,7 @@ export class StoreRepository {
   ): void {
     const validated = RightsReceiptSchema.parse(receipt);
     const stmt = db.prepare(`
-      INSERT OR REPLACE INTO receipts (receipt_id, order_id, capture_id, canonical_hash, data, created_at)
+      INSERT INTO receipts (receipt_id, order_id, capture_id, canonical_hash, data, created_at)
       VALUES (?, ?, ?, ?, ?, ?)
     `);
     stmt.run(

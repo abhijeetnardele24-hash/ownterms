@@ -3,19 +3,18 @@
     {
       "id": "asset_night_market_01",
       "title": "Night Market Signals",
-      "creatorName": "Mira Rao",
-      "creatorHandle": "@mirarao.lens",
+      "creatorName": "Mira Rao (Demo Persona)",
+      "creatorHandle": "@mirarao.demo",
       "creatorEmail": "mira.rao.creator@example.com",
       "assetType": "photography",
-      "description": "A cinematic, high-contrast night capture of bustling Bangalore street food stalls reflecting neon rain signage. Rich atmospheric lighting with precise color grading for commercial storytelling.",
-      "thumbnailUrl": "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1200&q=80",
-      "previewUrl": "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=2000&q=90",
+      "description": "An original AI-generated digital art composition depicting an evening street market with warm glowing lanterns reflecting on rain-slicked pavement. Demo asset illustrating licensing workflows for visual digital art.",
+      "thumbnailUrl": "/demo-assets/night-market-signals.jpg",
+      "previewUrl": "/demo-assets/night-market-signals.jpg",
       "specs": {
-        "resolution": "3840 × 2160 (4K UHD)",
-        "colorSpace": "DCI-P3 Wide Gamut",
-        "format": "16-bit TIFF / RAW Master",
-        "shutterSpeed": "1/125s at f/1.8",
-        "iso": 800
+        "assetClassification": "Digital Artwork (AI-Generated)",
+        "format": "JPEG / RGB",
+        "dimensions": "1344 × 768",
+        "licenseAuthority": "OwnTerms Demo Creator Persona"
       },
       "version": "1.0.0",
       "createdAt": "2026-11-01T10:00:00.000Z"
@@ -23,17 +22,18 @@
     {
       "id": "asset_type_monsoon_02",
       "title": "Monsoon Display Type Pack",
-      "creatorName": "Kavi Sundaram",
-      "creatorHandle": "@kavisundaram",
+      "creatorName": "Kavi Sundaram (Demo Persona)",
+      "creatorHandle": "@kavisundaram.demo",
       "creatorEmail": "kavi.type@example.com",
       "assetType": "font",
-      "description": "A fluid, modular display typeface drawing inspiration from mid-century South Asian sign-painting. Includes 6 variable optical weights and bespoke ligatures.",
-      "thumbnailUrl": "https://images.unsplash.com/photo-1516962215378-7fa2e137ae93?auto=format&fit=crop&w=1200&q=80",
-      "previewUrl": "https://images.unsplash.com/photo-1516962215378-7fa2e137ae93?auto=format&fit=crop&w=2000&q=90",
+      "description": "A modernist typography specimen poster exploring geometric letterforms (M, S, O, N) with clean architectural strokes on a cream parchment background. Demo asset for graphic design and typography licensing.",
+      "thumbnailUrl": "/demo-assets/monsoon-type-specimen.jpg",
+      "previewUrl": "/demo-assets/monsoon-type-specimen.jpg",
       "specs": {
-        "glyphs": "680 glyphs per cut",
-        "formats": "OTF, TTF, WOFF2",
-        "variableAxes": "Weight (200-900), Slant (0-12deg)"
+        "assetClassification": "Typography Design Specimen (AI-Generated)",
+        "format": "JPEG / RGB",
+        "dimensions": "896 × 1152",
+        "licenseAuthority": "OwnTerms Demo Creator Persona"
       },
       "version": "1.2.0",
       "createdAt": "2026-11-03T14:30:00.000Z"
@@ -41,18 +41,18 @@
     {
       "id": "asset_data_mobility_03",
       "title": "City Pulse Mobility Dataset",
-      "creatorName": "Urban Dynamics Lab",
-      "creatorHandle": "@urbandynamics",
+      "creatorName": "Urban Dynamics Lab (Demo Entity)",
+      "creatorHandle": "@urbandynamics.demo",
       "creatorEmail": "data@urbandynamics.org",
       "assetType": "dataset",
-      "description": "Anonymized high-frequency multimodal commuter mobility traces across 4 metropolitan transit corridors. 100,000 synthetic journeys with temporal timestamps and energy expenditure metrics.",
-      "thumbnailUrl": "https://images.unsplash.com/photo-1508873696983-2df5293cb395?auto=format&fit=crop&w=1200&q=80",
-      "previewUrl": "https://images.unsplash.com/photo-1508873696983-2df5293cb395?auto=format&fit=crop&w=2000&q=90",
+      "description": "An abstract geospatial data visualization showing glowing multimodal transit flow lines (amber and cyan trajectories) across an urban street grid. Demo asset for synthetic data and analytics licensing.",
+      "thumbnailUrl": "/demo-assets/city-pulse-mobility.jpg",
+      "previewUrl": "/demo-assets/city-pulse-mobility.jpg",
       "specs": {
-        "rows": "100,000 trips",
-        "attributes": "32 structured features",
-        "format": "Parquet + GeoJSON",
-        "privacyValidation": "Differential Privacy ε=0.5"
+        "assetClassification": "Synthetic Mobility Visualization (AI-Generated)",
+        "format": "JPEG / RGB",
+        "dimensions": "1344 × 768",
+        "licenseAuthority": "OwnTerms Demo Creator Persona"
       },
       "version": "2.1.0",
       "createdAt": "2026-11-05T08:15:00.000Z"

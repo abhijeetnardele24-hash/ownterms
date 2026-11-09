@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { loadScript } from "@paypal/paypal-js";
 import {
   Asset,
   LicensePolicy,
@@ -40,13 +41,45 @@ export function AssetLicensingView({ asset, initialPolicies }: Props) {
   const [extractedFacts, setExtractedFacts] = useState<IntendedUseFact | null>(null);
   const [rankedTiers, setRankedTiers] = useState<CompatibilityResult[] | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState<string | null>(null);
+  const [checkoutStatus, setCheckoutStatus] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [paypalSdkLoaded, setPaypalSdkLoaded] = useState(false);
+
+  const storedPurchaseIntentId = useRef<string | null>(null);
+  const isSandboxMode =
+    process.env.NEXT_PUBLIC_PAYPAL_MODE === "sandbox" &&
+    Boolean(process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID);
+
+  // Initialize PayPal JS SDK when in live Sandbox mode
+  useEffect(() => {
+    if (!isSandboxMode || !process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID) return;
+
+    let isMounted = true;
+    loadScript({
+      clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID,
+      currency: "USD",
+      intent: "capture",
+    })
+      .then((paypal) => {
+        if (isMounted && paypal?.Buttons) {
+          setPaypalSdkLoaded(true);
+        }
+      })
+      .catch((err) => {
+        console.error("PayPal JS SDK load error:", err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isSandboxMode]);
 
   // Trigger AI Intent Extraction
   const handleExtractIntent = async () => {
     if (!prompt.trim()) return;
     setIsExtracting(true);
     setCheckoutError(null);
+    setCheckoutStatus("Extracting intended-use parameters from natural language...");
 
     try {
       const res = await fetch("/api/intent/parse", {
@@ -62,19 +95,22 @@ export function AssetLicensingView({ asset, initialPolicies }: Props) {
 
       setExtractedFacts(data.facts);
       setRankedTiers(data.rankedTiers);
+      setCheckoutStatus("Extraction complete. License tiers evaluated by deterministic engine.");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Could not parse intent.";
       console.error(err);
       setCheckoutError(message);
+      setCheckoutStatus(null);
     } finally {
       setIsExtracting(false);
     }
   };
 
-  // Trigger Direct PayPal Orders v2 Sandbox Checkout
-  const handlePayPalCheckout = async (policy: LicensePolicy) => {
+  // Trigger Deterministic Fixture Mode Checkout (Judge Flow)
+  const handleFixtureCheckout = async (policy: LicensePolicy) => {
     setIsCheckingOut(policy.id);
     setCheckoutError(null);
+    setCheckoutStatus("Creating server purchase intent in Fixture mode...");
 
     try {
       // 1. Create order on server
@@ -96,8 +132,9 @@ export function AssetLicensingView({ asset, initialPolicies }: Props) {
       const orderId = createData.orderId;
       const purchaseIntentId = createData.purchaseIntentId;
 
+      setCheckoutStatus("Capturing verified fixture transaction and minting SHA-256 receipt...");
+
       // 2. Capture order on server with frozen purchaseIntentId
-      // Notice: The client sends NO authority over price, asset, tier, or intent!
       const captureRes = await fetch(`/api/checkout/${orderId}/capture`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -114,25 +151,26 @@ export function AssetLicensingView({ asset, initialPolicies }: Props) {
       // Navigate to the tamper-evident Rights Receipt
       router.push(`/receipt/${captureData.receipt.receiptId}`);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "PayPal checkout failed.";
+      const message = err instanceof Error ? err.message : "Fixture checkout failed.";
       console.error("Checkout failed:", err);
       setCheckoutError(message);
+      setCheckoutStatus(null);
     } finally {
       setIsCheckingOut(null);
     }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
+    <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
       {/* Top Breadcrumb & Title */}
       <div>
-        <div className="flex items-center gap-2 text-xs text-[#64748B] mb-2">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-[#64748B] mb-2">
           <span>Catalog</span>
           <span>/</span>
           <span className="uppercase">{asset.assetType}</span>
           <span>/</span>
           <span className="text-[#091A2A] font-medium">{asset.title}</span>
-        </div>
+        </nav>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-black text-[#091A2A] tracking-tight">
@@ -201,7 +239,7 @@ export function AssetLicensingView({ asset, initialPolicies }: Props) {
               <button
                 type="button"
                 onClick={() => setPrompt(CANONICAL_PRESET)}
-                className="text-xs font-semibold text-[#1769E0] hover:text-[#1255B8] underline underline-offset-2 flex items-center gap-1"
+                className="text-xs font-semibold text-[#1769E0] hover:text-[#1255B8] underline underline-offset-2 flex items-center gap-1 focus-visible:outline-2 focus-visible:outline-[#1769E0]"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Load Canonical Demo Request</span>
@@ -213,12 +251,17 @@ export function AssetLicensingView({ asset, initialPolicies }: Props) {
             </p>
 
             <div className="space-y-3">
+              <label htmlFor="intent-prompt" className="sr-only">
+                Natural language licensing intent request
+              </label>
               <textarea
+                id="intent-prompt"
+                name="intentPrompt"
                 rows={3}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Describe intended channels, duration, geographic territories, commercial scope, and budget..."
-                className="w-full p-3.5 rounded-lg border border-[#CBD5E1] text-xs sm:text-sm text-[#091A2A] focus:outline-none focus:ring-2 focus:ring-[#1769E0] focus:border-transparent transition-all font-mono"
+                className="w-full p-3.5 rounded-lg border border-[#CBD5E1] text-xs sm:text-sm text-[#091A2A] focus:outline-none focus:ring-2 focus:ring-[#1769E0] focus:border-transparent transition-colors font-mono"
               />
 
               <div className="flex items-center justify-between">
@@ -229,7 +272,7 @@ export function AssetLicensingView({ asset, initialPolicies }: Props) {
                   type="button"
                   onClick={handleExtractIntent}
                   disabled={isExtracting || !prompt.trim()}
-                  className="px-5 py-2.5 rounded-lg bg-[#091A2A] text-white text-xs font-bold hover:bg-[#1769E0] disabled:opacity-50 transition-all flex items-center gap-2 shadow-sm"
+                  className="px-5 py-2.5 rounded-lg bg-[#091A2A] text-white text-xs font-bold hover:bg-[#1769E0] disabled:opacity-50 transition-colors flex items-center gap-2 shadow-sm focus-visible:outline-2 focus-visible:outline-[#1769E0]"
                 >
                   {isExtracting ? (
                     <>
@@ -305,13 +348,22 @@ export function AssetLicensingView({ asset, initialPolicies }: Props) {
             )}
           </div>
 
-          {/* Checkout Error Alert */}
-          {checkoutError && (
-            <div className="p-4 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-xs text-[#DC2626] flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{checkoutError}</span>
-            </div>
-          )}
+          {/* Accessible Live Announcement Region */}
+          <div aria-live="polite" className="space-y-2">
+            {checkoutStatus && (
+              <div className="p-3.5 rounded-lg bg-[#F8FAFC] border border-[#CBD5E1] text-xs text-[#334155] flex items-center gap-2">
+                <Loader2 className="w-4 h-4 text-[#1769E0] animate-spin shrink-0" />
+                <span>{checkoutStatus}</span>
+              </div>
+            )}
+
+            {checkoutError && (
+              <div className="p-4 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-xs text-[#DC2626] flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{checkoutError}</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -343,7 +395,7 @@ export function AssetLicensingView({ asset, initialPolicies }: Props) {
             return (
               <div
                 key={policy.id}
-                className={`relative rounded-xl border p-6 flex flex-col justify-between transition-all bg-white ${
+                className={`relative rounded-xl border p-6 flex flex-col justify-between transition-colors bg-white ${
                   isRecommended
                     ? "border-2 border-[#16805B] shadow-lg ring-4 ring-[#16805B]/10"
                     : isIncompatible
@@ -447,42 +499,116 @@ export function AssetLicensingView({ asset, initialPolicies }: Props) {
 
                 {/* Checkout Action Button */}
                 <div className="pt-6 mt-4 border-t border-[#F1EFEA]">
-                  <button
-                    type="button"
-                    onClick={() => handlePayPalCheckout(policy)}
-                    disabled={isIncompatible || isProcessingThis || Boolean(isCheckingOut)}
-                    className={`w-full py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm ${
-                      isRecommended
-                        ? "bg-[#0070BA] hover:bg-[#005EA6] text-white"
-                        : isIncompatible
-                        ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                        : "bg-[#091A2A] hover:bg-[#1769E0] text-white"
-                    }`}
-                  >
-                    {isProcessingThis ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Authorizing with PayPal...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="font-extrabold tracking-tight">
-                          Pay with <span className="text-[#0079C1] bg-white px-1 py-0.5 rounded text-[10px]">PayPal</span>
-                        </span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </>
-                    )}
-                  </button>
-                  <span className="text-[10px] text-center block text-[#64748B] mt-1.5 font-medium">
-                    PayPal Orders v2 · Server-Locked ${(policy.priceCents / 100).toFixed(2)} USD
-                  </span>
+                  {isSandboxMode && paypalSdkLoaded && !isIncompatible ? (
+                    <div className="space-y-2">
+                      <div
+                        ref={(node) => {
+                          if (!node || node.children.length > 0) return;
+                          const win = window as unknown as {
+                            paypal?: {
+                              Buttons?: (opts: {
+                                createOrder: () => Promise<string>;
+                                onApprove: (data: { orderID: string }) => Promise<void>;
+                                onCancel: () => void;
+                                onError: (err: unknown) => void;
+                              }) => { render: (el: HTMLElement) => Promise<void> };
+                            };
+                          };
+                          if (!win.paypal?.Buttons) return;
+                          win.paypal
+                            .Buttons({
+                              createOrder: async () => {
+                                setIsCheckingOut(policy.id);
+                                setCheckoutStatus("Creating server-side PayPal order...");
+                                const res = await fetch("/api/checkout/create", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    assetId: asset.id,
+                                    tierId: policy.id,
+                                    intent: extractedFacts,
+                                  }),
+                                });
+                                const data = await res.json();
+                                if (!res.ok || !data.orderId) {
+                                  throw new Error(data.error || "Order creation failed");
+                                }
+                                storedPurchaseIntentId.current = data.purchaseIntentId;
+                                return data.orderId;
+                              },
+                              onApprove: async (data: { orderID: string }) => {
+                                setCheckoutStatus("Buyer approved order. Capturing and issuing receipt...");
+                                const captureRes = await fetch(`/api/checkout/${data.orderID}/capture`, {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    purchaseIntentId: storedPurchaseIntentId.current,
+                                  }),
+                                });
+                                const captureData = await captureRes.json();
+                                if (!captureRes.ok || !captureData.receipt) {
+                                  throw new Error(captureData.error || "Capture failed");
+                                }
+                                router.push(`/receipt/${captureData.receipt.receiptId}`);
+                              },
+                              onCancel: () => {
+                                setIsCheckingOut(null);
+                                setCheckoutStatus("PayPal checkout was cancelled by the payer.");
+                              },
+                              onError: (err: unknown) => {
+                                setIsCheckingOut(null);
+                                const msg = err instanceof Error ? err.message : "PayPal checkout error";
+                                setCheckoutError(msg);
+                              },
+                            })
+                            .render(node)
+                            .catch((err) => {
+                              console.error("PayPal button render error:", err);
+                            });
+                        }}
+                        className="min-h-[40px]"
+                      />
+                      <span className="text-[10px] text-center block text-[#16805B] font-semibold">
+                        Official PayPal Smart Button (Sandbox Buyer Approval)
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleFixtureCheckout(policy)}
+                        disabled={isIncompatible || isProcessingThis || Boolean(isCheckingOut)}
+                        className={`w-full py-3 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2 shadow-sm focus-visible:outline-2 focus-visible:outline-[#1769E0] ${
+                          isRecommended
+                            ? "bg-[#091A2A] hover:bg-[#16805B] text-white"
+                            : isIncompatible
+                            ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                            : "bg-[#091A2A] hover:bg-[#1769E0] text-white"
+                        }`}
+                      >
+                        {isProcessingThis ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Settling License (Fixture Mode)...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Settle License (Fixture Mode)</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </>
+                        )}
+                      </button>
+                      <span className="text-[10px] text-center block text-[#64748B] mt-1.5 font-medium">
+                        Deterministic Fixture · Server-Locked ${(policy.priceCents / 100).toFixed(2)} USD
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
       </div>
-    </div>
+    </main>
   );
 }
-

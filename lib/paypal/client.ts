@@ -238,17 +238,28 @@ export class PayPalClient {
     const data = await response.json();
     const capture = data.purchase_units?.[0]?.payments?.captures?.[0];
 
+    // STRICT FAIL CLOSED FOR LIVE SANDBOX: No synthetic fallback values permitted
+    if (!capture?.id) {
+      throw new Error("PayPal Provider Failure: Live capture response missing capture ID.");
+    }
+    if (!capture.amount?.value || !capture.amount?.currency_code) {
+      throw new Error("PayPal Provider Failure: Live capture response missing canonical amount/currency.");
+    }
+    if (!capture.status) {
+      throw new Error("PayPal Provider Failure: Live capture response missing capture status.");
+    }
+
     return {
-      captureId: capture?.id || "",
+      captureId: capture.id,
       orderId: data.id,
-      status: capture?.status || data.status,
+      status: capture.status,
       amount: {
-        currency_code: capture?.amount?.currency_code || "USD",
-        value: capture?.amount?.value || (purchaseIntent.priceCents / 100).toFixed(2),
+        currency_code: capture.amount.currency_code,
+        value: capture.amount.value,
       },
       payee: {
-        email_address: data.purchase_units?.[0]?.payee?.email_address || "creator@ownterms.org",
-        merchant_id: data.purchase_units?.[0]?.payee?.merchant_id,
+        email_address: data.purchase_units?.[0]?.payee?.email_address || capture.payee?.email_address || "",
+        merchant_id: data.purchase_units?.[0]?.payee?.merchant_id || capture.payee?.merchant_id,
       },
       isMocked: false,
       provenance: "LIVE_SANDBOX",
@@ -303,7 +314,7 @@ export class PayPalClient {
         amountVerified: false,
         currencyVerified: false,
         customReferenceVerified: false,
-        reason: "PayPal GET order read-back failed.",
+        reason: `PayPal GET order read-back failed with HTTP ${response.status}.`,
       };
     }
 
@@ -311,27 +322,38 @@ export class PayPalClient {
     const unit = data.purchase_units?.[0];
     const orderStatus = data.status;
     const capture = unit?.payments?.captures?.[0];
-    const captureStatus = capture?.status;
 
-    const amountVal = unit?.amount?.value || capture?.amount?.value;
-    const currencyVal = unit?.amount?.currency_code || capture?.amount?.currency_code;
+    if (!capture) {
+      return {
+        verified: false,
+        orderStatus,
+        amountVerified: false,
+        currencyVerified: false,
+        customReferenceVerified: false,
+        reason: "PayPal read-back verification failed: No completed capture found on order.",
+      };
+    }
+
+    const captureAmountVal = capture.amount?.value;
+    const captureCurrencyVal = capture.amount?.currency_code;
     const customIdVal = unit?.custom_id;
 
-    const amountVerified = amountVal === expectedValue;
-    const currencyVerified = currencyVal === purchaseIntent.currency;
+    // Verify actual capture amount and currency, not only order unit
+    const amountVerified = captureAmountVal === expectedValue && unit?.amount?.value === expectedValue;
+    const currencyVerified = captureCurrencyVal === purchaseIntent.currency && unit?.amount?.currency_code === purchaseIntent.currency;
     const customReferenceVerified = customIdVal === purchaseIntent.id;
-    const statusVerified = orderStatus === "COMPLETED" && (!capture || captureStatus === "COMPLETED");
+    const statusVerified = orderStatus === "COMPLETED" && capture.status === "COMPLETED";
 
     const verified = statusVerified && amountVerified && currencyVerified && customReferenceVerified;
 
     return {
       verified,
       orderStatus,
-      captureStatus,
+      captureStatus: capture.status,
       amountVerified,
       currencyVerified,
       customReferenceVerified,
-      reason: verified ? undefined : "One or more provider verification checks failed.",
+      reason: verified ? undefined : "One or more provider verification checks failed: amount, currency, custom_id, or capture status mismatch.",
     };
   }
 

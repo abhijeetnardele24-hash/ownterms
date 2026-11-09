@@ -42,7 +42,7 @@ flowchart TD
     subgraph CryptographicTruth ["Stage 4: Cryptographic Settlement"]
         CanonicalSerializer["Canonical JSON Normalizer"]
         SHA256Hasher["SHA-256 Digest Generator"]
-        Receipt["Verifiable Rights Receipt<br/>(Immutable Machine-Readable Contract)"]
+        Receipt["Tamper-Evident Rights Receipt<br/>(Canonical SHA-256 Digest)"]
         ControlRoom["AG Grid Creator Control Room<br/>(Real-time Audit Ledger & Rights Coverage)"]
 
         Capture --> CanonicalSerializer

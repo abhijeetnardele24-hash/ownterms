@@ -13,13 +13,27 @@ import {
   Download,
   TableProperties,
   ArrowLeft,
-  Lock,
   Layers,
 } from "lucide-react";
 
 interface Props {
   initialReceipt: RightsReceipt;
 }
+
+const usdFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+});
+
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "UTC",
+});
 
 export function ReceiptView({ initialReceipt }: Props) {
   const [copied, setCopied] = useState(false);
@@ -77,30 +91,33 @@ export function ReceiptView({ initialReceipt }: Props) {
     downloadAnchor.remove();
   };
 
+  const provenance = initialReceipt.provenance || "FIXTURE";
+  const isLiveSandbox = provenance === "LIVE_SANDBOX";
+
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      {/* Back button */}
+    <main id="main-content" className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+      {/* Back button & Actions */}
       <div className="flex items-center justify-between">
         <Link
           href={`/assets/${initialReceipt.assetId}`}
-          className="text-xs font-semibold text-[#64748B] hover:text-[#091A2A] flex items-center gap-1.5 transition-colors"
+          className="text-xs font-semibold text-[#64748B] hover:text-[#091A2A] flex items-center gap-1.5 transition-colors focus-visible:outline-2 focus-visible:outline-[#1769E0]"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to Asset Negotiation</span>
+          <span>Back to Asset Licensing</span>
         </Link>
 
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={handleDownloadJson}
-            className="px-3 py-1.5 rounded-md border border-[#CBD5E1] bg-white text-xs font-semibold text-[#091A2A] hover:bg-[#F8FAFC] flex items-center gap-1.5 shadow-sm"
+            className="px-3 py-1.5 rounded-md border border-[#CBD5E1] bg-white text-xs font-semibold text-[#091A2A] hover:bg-[#F8FAFC] flex items-center gap-1.5 shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-[#1769E0]"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Download JSON</span>
           </button>
           <Link
             href="/control-room"
-            className="px-3 py-1.5 rounded-md bg-[#091A2A] text-white text-xs font-semibold hover:bg-[#1769E0] flex items-center gap-1.5 shadow-sm"
+            className="px-3 py-1.5 rounded-md bg-[#091A2A] text-white text-xs font-semibold hover:bg-[#1769E0] flex items-center gap-1.5 shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-[#1769E0]"
           >
             <TableProperties className="w-3.5 h-3.5" />
             <span>View in Control Room</span>
@@ -108,30 +125,41 @@ export function ReceiptView({ initialReceipt }: Props) {
         </div>
       </div>
 
-      {/* Main Certificate Card */}
+      {/* Main Rights Receipt Card */}
       <div className="rounded-2xl border-2 border-[#E4E2DB] bg-white p-8 sm:p-12 shadow-md relative overflow-hidden space-y-8">
-        {/* Certificate Decorative Border */}
+        {/* Decorative Border */}
         <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#1769E0] via-[#16805B] to-[#091A2A]" />
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-[#F1EFEA]">
           <div>
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#16805B] mb-1">
-              <ShieldCheck className="w-4 h-4" />
-              <span>Verifiable Rights Instrument</span>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-bold uppercase tracking-widest text-[#16805B] flex items-center gap-1">
+                <ShieldCheck className="w-4 h-4" />
+                <span>Tamper-Evident Rights Receipt</span>
+              </span>
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                  isLiveSandbox
+                    ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                    : "bg-amber-100 text-amber-800 border-amber-300"
+                }`}
+              >
+                {provenance}
+              </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-[#091A2A] tracking-tight">
-              Certificate of Intellectual Property License
+              Machine-Readable Rights Receipt
             </h1>
             <p className="text-xs text-[#64748B] mt-1 font-mono">
               Receipt ID: {activeReceipt.receiptId}
             </p>
           </div>
 
-          <div className="text-right sm:text-right">
+          <div className="text-left sm:text-right">
             <span className="text-[11px] text-[#64748B] block">Settled Amount</span>
             <span className="text-2xl sm:text-3xl font-black text-[#091A2A]">
-              ${(activeReceipt.pricePaidCents / 100).toFixed(2)}
+              {usdFormatter.format(activeReceipt.pricePaidCents / 100)}
             </span>
             <span className="text-xs font-bold text-[#16805B] ml-1">USD</span>
           </div>
@@ -161,75 +189,60 @@ export function ReceiptView({ initialReceipt }: Props) {
             </div>
 
             <div>
-              <span className="text-[#64748B] font-medium block">License Policy Tier</span>
-              <span className="font-bold text-[#1769E0] uppercase tracking-wide">
-                {activeReceipt.licenseName}
+              <span className="text-[#64748B] font-medium block">License Tier</span>
+              <span className="font-bold text-[#16805B]">
+                {activeReceipt.licenseName} ({activeReceipt.licenseTier})
               </span>
             </div>
           </div>
 
           <div className="space-y-4">
             <div>
-              <span className="text-[#64748B] font-medium block">PayPal Settlement Proof</span>
-              <div className="font-mono text-[11px] space-y-0.5 text-[#091A2A]">
-                <p>Order ID: {activeReceipt.paypalOrderId}</p>
-                <p>Capture ID: {activeReceipt.paypalCaptureId}</p>
-                <p className="text-[#16805B] font-semibold">● Status: COMPLETED (Verified)</p>
-              </div>
-            </div>
-
-            <div>
-              <span className="text-[#64748B] font-medium block">Validity Period</span>
-              <p className="font-mono text-[11px] text-[#091A2A]">
-                Issued: {new Date(activeReceipt.issuedAt).toUTCString()}
-              </p>
-              <p className="font-mono text-[11px] text-[#091A2A]">
-                Valid Until: {new Date(activeReceipt.validUntil).toUTCString()} ({activeReceipt.grantedDurationDays} days)
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Granted Scope Strip */}
-        <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-3">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#091A2A] block">
-            Granted Rights & Scope
-          </span>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-            <div>
-              <span className="text-[#64748B] block text-[10px]">Permitted Channels</span>
-              <span className="font-semibold text-[#091A2A]">{activeReceipt.grantedChannels.join(", ")}</span>
-            </div>
-            <div>
-              <span className="text-[#64748B] block text-[10px]">Territories</span>
-              <span className="font-semibold text-[#091A2A]">{activeReceipt.grantedTerritories.join(", ")}</span>
-            </div>
-            <div>
-              <span className="text-[#64748B] block text-[10px]">Commercial Use</span>
-              <span className={`font-semibold ${activeReceipt.commercialUse ? "text-[#16805B]" : "text-[#DC2626]"}`}>
-                {activeReceipt.commercialUse ? "Approved" : "Prohibited"}
+              <span className="text-[#64748B] font-medium block">PayPal Transaction Proof</span>
+              <span className="font-mono text-[#091A2A] block text-[11px]">
+                Order: {activeReceipt.paypalOrderId}
+              </span>
+              <span className="font-mono text-[#091A2A] block text-[11px]">
+                Capture: {activeReceipt.paypalCaptureId}
               </span>
             </div>
+
             <div>
-              <span className="text-[#64748B] block text-[10px]">AI Model Training</span>
-              <span className={`font-semibold ${activeReceipt.aiTrainingAllowed ? "text-[#16805B]" : "text-[#DC2626]"}`}>
-                {activeReceipt.aiTrainingAllowed ? "Permitted" : "Prohibited"}
+              <span className="text-[#64748B] font-medium block">Validity Window (UTC)</span>
+              <span className="text-[#091A2A] block">
+                Issued: {dateFormatter.format(new Date(activeReceipt.issuedAt))}
+              </span>
+              <span className="text-[#091A2A] block">
+                Valid Until: {dateFormatter.format(new Date(activeReceipt.validUntil))} ({activeReceipt.grantedDurationDays} days)
+              </span>
+            </div>
+
+            <div>
+              <span className="text-[#64748B] font-medium block">Granted Scope</span>
+              <span className="text-[#091A2A] block">
+                Channels: <strong>{activeReceipt.grantedChannels.join(", ")}</strong>
+              </span>
+              <span className="text-[#091A2A] block">
+                Territories: <strong>{activeReceipt.grantedTerritories.join(", ")}</strong>
               </span>
             </div>
           </div>
         </div>
 
-        {/* Cryptographic SHA-256 Binding */}
-        <div className="space-y-3 pt-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#091A2A] flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5 text-[#1769E0]" />
+        {/* SHA-256 Digest Section */}
+        <div className="space-y-2 pt-4 border-t border-[#F1EFEA]">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold text-[#091A2A] flex items-center gap-1.5">
               <span>Canonical SHA-256 Digest</span>
+              <span className="text-[10px] text-[#64748B] font-normal">
+                (Lexicographically Sorted JSON Serialization)
+              </span>
             </span>
+
             <button
               type="button"
               onClick={handleCopyHash}
-              className="text-xs text-[#1769E0] font-semibold hover:underline flex items-center gap-1"
+              className="text-[#1769E0] font-semibold hover:underline flex items-center gap-1 text-[11px] focus-visible:outline-2 focus-visible:outline-[#1769E0]"
             >
               {copied ? (
                 <>
@@ -250,8 +263,9 @@ export function ReceiptView({ initialReceipt }: Props) {
           </div>
         </div>
 
-        {/* Status Verification Pill */}
+        {/* Status Verification Pill with aria-live */}
         <div
+          aria-live="polite"
           className={`p-4 rounded-xl border flex items-center gap-3 transition-colors ${
             isAuthentic
               ? "bg-[#EDF7F2] border-[#C6E6D6] text-[#16805B]"
@@ -259,21 +273,21 @@ export function ReceiptView({ initialReceipt }: Props) {
           }`}
         >
           {isAuthentic ? (
-            <CheckCircle2 className="w-5 h-5 shrink-0" />
+            <CheckCircle2 className="w-5 h-5 shrink-0" aria-hidden="true" />
           ) : (
-            <AlertTriangle className="w-5 h-5 shrink-0" />
+            <AlertTriangle className="w-5 h-5 shrink-0" aria-hidden="true" />
           )}
 
           <div>
-            <h4 className="font-bold text-xs sm:text-sm">
+            <h2 className="font-bold text-xs sm:text-sm">
               {isAuthentic
                 ? "Cryptographic Integrity Verified"
                 : "Cryptographic Tampering Detected!"}
-            </h4>
+            </h2>
             <p className="text-[11px] opacity-90 mt-0.5">
               {isAuthentic
-                ? "The receipt data matches the original canonical SHA-256 signature exactly. All terms are authentic."
-                : `A byte mismatch occurred on field: [${tamperedField}]. Computed hash (${currentComputedHash.slice(0, 16)}…) does not match the signed contract.`}
+                ? "The receipt data matches the original canonical SHA-256 digest exactly. All terms are authentic."
+                : `A byte mismatch occurred on field: [${tamperedField}]. Computed hash (${currentComputedHash.slice(0, 16)}…) does not match the sealed receipt.`}
             </p>
           </div>
         </div>
@@ -289,41 +303,40 @@ export function ReceiptView({ initialReceipt }: Props) {
         </div>
 
         <p className="text-xs text-[#64748B] leading-relaxed">
-          Test cryptographic resilience. Click any modification button below to simulate an attacker altering the local receipt file. Watch how the canonical SHA-256 recalculation immediately catches the fraud.
+          Test cryptographic resilience. Click any modification button below to simulate an adversary altering the local receipt data. The canonical SHA-256 recalculation immediately detects the mismatch.
         </p>
 
         <div className="flex flex-wrap items-center gap-2 pt-2">
           <button
             type="button"
             onClick={handleTamperTier}
-            className="px-3 py-1.5 rounded-md bg-[#FEF2F2] border border-[#FECACA] text-[#DC2626] text-xs font-semibold hover:bg-red-100 transition-colors"
+            className="px-3 py-1.5 rounded-md bg-[#FEF2F2] border border-[#FECACA] text-[#DC2626] text-xs font-semibold hover:bg-red-100 transition-colors focus-visible:outline-2 focus-visible:outline-red-600"
           >
             Tamper Tier to Extended
           </button>
           <button
             type="button"
             onClick={handleTamperPrice}
-            className="px-3 py-1.5 rounded-md bg-[#FEF2F2] border border-[#FECACA] text-[#DC2626] text-xs font-semibold hover:bg-red-100 transition-colors"
+            className="px-3 py-1.5 rounded-md bg-[#FEF2F2] border border-[#FECACA] text-[#DC2626] text-xs font-semibold hover:bg-red-100 transition-colors focus-visible:outline-2 focus-visible:outline-red-600"
           >
             Tamper Price to $0.00
           </button>
           <button
             type="button"
             onClick={handleTamperTerritories}
-            className="px-3 py-1.5 rounded-md bg-[#FEF2F2] border border-[#FECACA] text-[#DC2626] text-xs font-semibold hover:bg-red-100 transition-colors"
+            className="px-3 py-1.5 rounded-md bg-[#FEF2F2] border border-[#FECACA] text-[#DC2626] text-xs font-semibold hover:bg-red-100 transition-colors focus-visible:outline-2 focus-visible:outline-red-600"
           >
             Tamper Territories to Worldwide
           </button>
           <button
             type="button"
             onClick={handleRestore}
-            className="px-3 py-1.5 rounded-md bg-[#EDF7F2] border border-[#C6E6D6] text-[#16805B] text-xs font-semibold hover:bg-green-100 transition-colors"
+            className="px-3 py-1.5 rounded-md bg-[#EDF7F2] border border-[#C6E6D6] text-[#16805B] text-xs font-semibold hover:bg-green-100 transition-colors focus-visible:outline-2 focus-visible:outline-emerald-600"
           >
             Restore Authentic State
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
-

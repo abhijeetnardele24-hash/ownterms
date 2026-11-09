@@ -105,9 +105,9 @@ export async function POST(req: NextRequest) {
     // 4. Create PayPal Order
     const order = await paypal.createOrder(purchaseIntent);
 
-    // 5. Bind order ID and save to SQLite
+    // 5. Bind order ID, set state to ORDER_CREATED (never AUTHORIZED prematurely) and save to SQLite
     purchaseIntent.paypalOrderId = order.orderId;
-    purchaseIntent.state = "AUTHORIZED";
+    purchaseIntent.state = "ORDER_CREATED";
     store.savePurchaseIntent(purchaseIntent);
 
     return NextResponse.json({

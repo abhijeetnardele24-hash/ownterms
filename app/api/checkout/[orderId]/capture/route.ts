@@ -61,12 +61,18 @@ export async function POST(
       );
     }
 
-    // 3. Capture order via PayPal (or deterministic fixture)
+    // 3. Mark capture pending on frozen purchase intent
+    purchaseIntent.state = "CAPTURE_PENDING";
+    store.savePurchaseIntent(purchaseIntent);
+
+    // 4. Capture order via PayPal (or deterministic fixture)
     const capture = await paypal.captureOrder(orderId, purchaseIntent);
 
-    // 4. Perform rigorous read-back verification against PayPal Orders v2 API
+    // 5. Perform rigorous read-back verification against PayPal Orders v2 API
     const verification = await paypal.verifyOrder(orderId, purchaseIntent);
     if (!verification.verified) {
+      purchaseIntent.state = "FAILED";
+      store.savePurchaseIntent(purchaseIntent);
       return NextResponse.json(
         {
           error: "Read-back verification failed: " + (verification.reason || "Provider fact mismatch."),
@@ -76,12 +82,12 @@ export async function POST(
       );
     }
 
-    // 5. Calculate license validity dates
+    // 6. Calculate license validity dates
     const issuedDate = new Date();
     const validUntilDate = new Date();
     validUntilDate.setDate(issuedDate.getDate() + purchaseIntent.normalizedUse.durationDays);
 
-    // 6. Mint cryptographic Rights Receipt using frozen server records
+    // 7. Mint cryptographic Rights Receipt using frozen server records & hashes
     const receipt = mintRightsReceipt({
       receiptId: `rcpt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       assetId: asset.id,
@@ -102,23 +108,22 @@ export async function POST(
       paypalOrderId: orderId,
       paypalCaptureId: capture.captureId,
       payeeEmail: capture.payee.email_address,
+      policyHash: purchaseIntent.policyHash,
+      purchasePayloadHash: purchaseIntent.purchasePayloadHash,
+      provenance: purchaseIntent.provenance,
       issuedAt: issuedDate.toISOString(),
       validUntil: validUntilDate.toISOString(),
     });
 
-    // 7. Update purchase intent state to SETTLED
-    purchaseIntent.state = "SETTLED";
-    purchaseIntent.paypalCaptureId = capture.captureId;
-    store.savePurchaseIntent(purchaseIntent);
-
-    // 8. Persist receipt to durable SQLite and update ledger with accurate provenance
-    store.saveReceipt(receipt, purchaseIntent.provenance);
+    // 8. Atomically settle purchase intent, insert receipt, and append ledger
+    const settlementResult = store.settlePurchaseAndMintReceipt(receipt, purchaseIntent);
 
     return NextResponse.json({
       success: true,
       capture,
-      receipt,
-      receiptUrl: `/receipt/${receipt.receiptId}`,
+      receipt: settlementResult.receipt,
+      idempotent: settlementResult.idempotent,
+      receiptUrl: `/receipt/${settlementResult.receipt.receiptId}`,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to capture checkout order.";

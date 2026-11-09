@@ -27,6 +27,7 @@ describe("canonical-receipt - Cryptographic Rights Minting & Verification", () =
     paypalOrderId: "ORD_SANDBOX_12345",
     paypalCaptureId: "CAP_SANDBOX_67890",
     payeeEmail: "mira.rao.creator@example.com",
+    provenance: "FIXTURE",
     issuedAt: "2026-11-09T02:00:00.000Z",
     validUntil: "2026-12-09T02:00:00.000Z",
   };

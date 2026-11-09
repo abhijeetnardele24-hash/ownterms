@@ -16,14 +16,14 @@ export default function HomePage() {
   const assets = store.getAssets();
 
   return (
-    <div className="space-y-16 pb-20">
+    <main id="main-content" className="space-y-16 pb-20">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-[#F4F3EF] to-[#FBFBFA] border-b border-[#E4E2DB] pt-16 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EDF7F2] border border-[#C6E6D6] text-xs font-semibold text-[#16805B] mb-6">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>PayPal AI Hackathon — Official Submission</span>
+              <span>PayPal AI Hackathon Project</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#091A2A] leading-tight">
@@ -33,20 +33,20 @@ export default function HomePage() {
             </h1>
 
             <p className="mt-5 text-lg sm:text-xl text-[#475569] leading-relaxed">
-              Autonomous AI agents are generating campaigns, fine-tuning models, and scraping creator work. OwnTerms provides the missing legal and financial rails: machine-readable creator policies, quarantined AI intent extraction, deterministic license matching, and instant <strong>PayPal Orders v2</strong> settlement.
+              Autonomous AI agents are generating campaigns, fine-tuning models, and using creator work. OwnTerms provides machine-readable creator policies, quarantined AI intent extraction, deterministic license matching, and verified <strong>PayPal Orders v2</strong> settlement with tamper-evident Rights Receipts.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <Link
                 href="/assets/asset_night_market_01"
-                className="px-6 py-3.5 rounded-lg bg-[#091A2A] text-white font-semibold text-sm hover:bg-[#1769E0] transition-all shadow-md flex items-center gap-2 group"
+                className="px-6 py-3.5 rounded-lg bg-[#091A2A] text-white font-semibold text-sm hover:bg-[#1769E0] transition-colors shadow-md flex items-center gap-2 group focus-visible:outline-2 focus-visible:outline-[#1769E0]"
               >
                 <span>Launch Flagship Demo</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link
                 href="/control-room"
-                className="px-6 py-3.5 rounded-lg bg-white border border-[#CBD5E1] text-[#091A2A] font-semibold text-sm hover:bg-[#F8FAFC] transition-all shadow-sm flex items-center gap-2"
+                className="px-6 py-3.5 rounded-lg bg-white border border-[#CBD5E1] text-[#091A2A] font-semibold text-sm hover:bg-[#F8FAFC] transition-colors shadow-sm flex items-center gap-2 focus-visible:outline-2 focus-visible:outline-[#1769E0]"
               >
                 <TableProperties className="w-4 h-4 text-[#1769E0]" />
                 <span>Creator Control Room</span>
@@ -95,7 +95,7 @@ export default function HomePage() {
             </div>
             <h3 className="font-bold text-base text-[#091A2A]">SHA-256 Rights Receipt</h3>
             <p className="text-xs text-[#64748B] leading-relaxed">
-              Every completed transaction issues an immutable, canonical JSON receipt bound cryptographically to the PayPal capture ID.
+              Every completed transaction issues a tamper-evident, canonical JSON receipt bound cryptographically with a SHA-256 digest to the PayPal capture ID.
             </p>
           </div>
         </div>
@@ -221,6 +221,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-    </div>
+    </main>
   );
 }
