@@ -4,6 +4,7 @@ import { POST as captureCheckout } from "@/app/api/checkout/[orderId]/capture/ro
 import { GET as getReceipt } from "@/app/api/receipt/[receiptId]/route";
 import { GET as getLedger } from "@/app/api/control-room/ledger/route";
 import { NextRequest } from "next/server";
+import { LedgerEntry } from "@/lib/types/domain";
 
 describe("Checkout & Settlement Flow - Integration Test", () => {
   const assetId = "asset_night_market_01";
@@ -25,20 +26,15 @@ describe("Checkout & Settlement Flow - Integration Test", () => {
     expect(createData.priceCents).toBe(6900);
 
     const orderId = createData.orderId;
+    const purchaseIntentId = createData.purchaseIntentId;
 
-    // 2. Capture order
+    // 2. Capture order with frozen purchaseIntentId
     const captureReq = new NextRequest(
       `http://localhost:3000/api/checkout/${orderId}/capture`,
       {
         method: "POST",
         body: JSON.stringify({
-          assetId,
-          tierId,
-          intent: {
-            channels: ["instagram_ad"],
-            durationDays: 30,
-            territories: ["IN", "SG"],
-          },
+          purchaseIntentId,
         }),
         headers: { "Content-Type": "application/json" },
       }
@@ -70,6 +66,7 @@ describe("Checkout & Settlement Flow - Integration Test", () => {
     const ledgerRes = await getLedger();
     const ledgerData = await ledgerRes.json();
     expect(ledgerData.success).toBe(true);
-    expect(ledgerData.ledger.some((l: any) => l.receiptHash === captureData.receipt.canonicalSha256)).toBe(true);
+    expect(ledgerData.ledger.some((l: LedgerEntry) => l.receiptHash === captureData.receipt.canonicalSha256)).toBe(true);
   });
 });
+

@@ -10,43 +10,78 @@ export async function POST(
   try {
     const { orderId } = await params;
     const body = await req.json();
-    const { assetId, tierId, intent } = body || {};
+    const { purchaseIntentId } = body || {};
 
-    if (!orderId || !assetId || !tierId) {
+    if (!orderId) {
       return NextResponse.json(
-        { error: "orderId, assetId, and tierId are required to capture an order." },
+        { error: "orderId is required to capture an order." },
         { status: 400 }
       );
     }
 
-    const asset = store.getAssetById(assetId);
-    const policy = store.getPolicyById(assetId, tierId);
+    // 1. Idempotency check: if receipt already minted for this order, return it immediately
+    const existingReceipt = store.getReceiptByOrderId(orderId);
+    if (existingReceipt) {
+      return NextResponse.json({
+        success: true,
+        idempotent: true,
+        receipt: existingReceipt,
+        receiptUrl: `/receipt/${existingReceipt.receiptId}`,
+      });
+    }
 
-    if (!asset || !policy) {
+    // 2. Fetch the frozen server-side PurchaseIntent
+    // NEVER trust client-supplied price, tier, or intended use at capture time!
+    let purchaseIntent = purchaseIntentId ? store.getPurchaseIntent(purchaseIntentId) : undefined;
+    if (!purchaseIntent) {
+      purchaseIntent = store.getPurchaseIntentByOrderId(orderId);
+    }
+
+    if (!purchaseIntent) {
       return NextResponse.json(
-        { error: "Asset or license policy not found." },
+        { error: "Purchase intent not found or order has expired." },
         { status: 404 }
       );
     }
 
-    // 1. Capture order via PayPal
-    const capture = await paypal.captureOrder(orderId);
-
-    // 2. Perform read-back verification against PayPal API
-    const verification = await paypal.verifyOrder(orderId);
-    if (!verification.verified && !capture.isMocked) {
+    if (purchaseIntent.paypalOrderId && purchaseIntent.paypalOrderId !== orderId) {
       return NextResponse.json(
-        { error: "Read-back verification failed: order is not in COMPLETED status." },
+        { error: "Mismatched order ID on frozen purchase intent." },
         { status: 400 }
       );
     }
 
-    // 3. Calculate validity date
+    const asset = store.getAssetById(purchaseIntent.assetId);
+    const policy = store.getPolicyById(purchaseIntent.assetId, purchaseIntent.policyId);
+
+    if (!asset || !policy) {
+      return NextResponse.json(
+        { error: "Referenced asset or policy not found in store." },
+        { status: 404 }
+      );
+    }
+
+    // 3. Capture order via PayPal (or deterministic fixture)
+    const capture = await paypal.captureOrder(orderId, purchaseIntent);
+
+    // 4. Perform rigorous read-back verification against PayPal Orders v2 API
+    const verification = await paypal.verifyOrder(orderId, purchaseIntent);
+    if (!verification.verified) {
+      return NextResponse.json(
+        {
+          error: "Read-back verification failed: " + (verification.reason || "Provider fact mismatch."),
+          details: verification,
+        },
+        { status: 400 }
+      );
+    }
+
+    // 5. Calculate license validity dates
     const issuedDate = new Date();
     const validUntilDate = new Date();
-    validUntilDate.setDate(issuedDate.getDate() + policy.permissions.maxDurationDays);
+    validUntilDate.setDate(issuedDate.getDate() + purchaseIntent.normalizedUse.durationDays);
 
-    // 4. Mint cryptographic Rights Receipt
+    // 6. Mint cryptographic Rights Receipt using frozen server records
     const receipt = mintRightsReceipt({
       receiptId: `rcpt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       assetId: asset.id,
@@ -55,11 +90,11 @@ export async function POST(
       creatorHandle: asset.creatorHandle,
       licenseTier: policy.tier,
       licenseName: policy.name,
-      pricePaidCents: policy.priceCents,
+      pricePaidCents: purchaseIntent.priceCents, // Server-held frozen price!
       currency: "USD",
-      grantedChannels: intent?.channels || policy.permissions.channels,
-      grantedDurationDays: intent?.durationDays || policy.permissions.maxDurationDays,
-      grantedTerritories: intent?.territories || policy.permissions.allowedTerritories,
+      grantedChannels: purchaseIntent.normalizedUse.channels,
+      grantedDurationDays: purchaseIntent.normalizedUse.durationDays,
+      grantedTerritories: purchaseIntent.normalizedUse.territories,
       commercialUse: policy.permissions.commercialUse,
       aiTrainingAllowed: policy.permissions.allowAiTraining,
       derivativeModificationsAllowed: policy.permissions.allowDerivativeModifications,
@@ -71,8 +106,13 @@ export async function POST(
       validUntil: validUntilDate.toISOString(),
     });
 
-    // 5. Store in repository and ledger
-    store.saveReceipt(receipt);
+    // 7. Update purchase intent state to SETTLED
+    purchaseIntent.state = "SETTLED";
+    purchaseIntent.paypalCaptureId = capture.captureId;
+    store.savePurchaseIntent(purchaseIntent);
+
+    // 8. Persist receipt to durable SQLite and update ledger with accurate provenance
+    store.saveReceipt(receipt, purchaseIntent.provenance);
 
     return NextResponse.json({
       success: true,
@@ -80,11 +120,9 @@ export async function POST(
       receipt,
       receiptUrl: `/receipt/${receipt.receiptId}`,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to capture checkout order.";
     console.error("Error in /api/checkout/[orderId]/capture:", error);
-    return NextResponse.json(
-      { error: error?.message || "Failed to capture checkout order." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

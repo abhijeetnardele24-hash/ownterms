@@ -66,3 +66,4 @@ We built **OwnTerms** to provide the missing economic and legal rails for agenti
 - `tailwind-css`
 - `render`
 - `vitest`
+

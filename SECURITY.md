@@ -22,3 +22,4 @@ OwnTerms treats intellectual property transactions, agentic commerce, and paymen
 ## Reporting a Vulnerability
 
 If you discover a security vulnerability in OwnTerms, please open a private GitHub security advisory or email the maintainers directly. Please do not report security issues through public issue trackers.
+

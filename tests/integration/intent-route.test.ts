@@ -1,8 +1,19 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { POST } from "@/app/api/intent/parse/route";
 import { NextRequest } from "next/server";
+import { CompatibilityResult } from "@/lib/types/domain";
 
-describe("POST /api/intent/parse - Integration Route Test", () => {
+describe("POST /api/intent/parse - Integration Route Test (Deterministic)", () => {
+  const originalEnv = process.env.USE_FIXTURE_AI;
+
+  beforeEach(() => {
+    process.env.USE_FIXTURE_AI = "true";
+  });
+
+  afterEach(() => {
+    process.env.USE_FIXTURE_AI = originalEnv;
+  });
+
   it("rejects empty prompt requests with 400", async () => {
     const req = new NextRequest("http://localhost:3000/api/intent/parse", {
       method: "POST",
@@ -35,7 +46,7 @@ describe("POST /api/intent/parse - Integration Route Test", () => {
     expect(data.rankedTiers).toBeDefined();
     expect(data.rankedTiers.length).toBe(3);
 
-    const recommended = data.rankedTiers.find((t: any) => t.status === "recommended");
+    const recommended = data.rankedTiers.find((t: CompatibilityResult) => t.status === "recommended");
     expect(recommended).toBeDefined();
     expect(recommended.policy.id).toBe("tier_nm_commercial");
     expect(recommended.policy.priceCents).toBe(6900);

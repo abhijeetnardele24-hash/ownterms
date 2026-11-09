@@ -24,7 +24,7 @@ export async function GET(
       receipt,
       verification,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in /api/receipt/[receiptId]:", error);
     return NextResponse.json(
       { error: "Failed to retrieve receipt." },
@@ -32,3 +32,4 @@ export async function GET(
     );
   }
 }
+

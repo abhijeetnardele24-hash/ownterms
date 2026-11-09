@@ -38,3 +38,4 @@ All assets used in the OwnTerms canonical demo are original or licensed for demo
   - **Tier 1: Academic Research:** \$49.00 USD (Research and benchmark evaluation).
   - **Tier 2: Commercial Inference:** \$199.00 USD (Commercial routing optimization and agent navigation).
   - **Tier 3: Model Fine-Tuning Permitted:** \$499.00 USD (Explicit grant allowing training and fine-tuning of neural networks).
+

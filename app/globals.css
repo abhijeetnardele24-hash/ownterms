@@ -1,26 +1,45 @@
 @import "tailwindcss";
+@import "ag-grid-community/styles/ag-grid.css";
+@import "ag-grid-community/styles/ag-theme-quartz.css";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #fbfbfa;
+  --foreground: #091a2a;
+  --surface: #ffffff;
+  --surface-raised: #f4f3ef;
+  --border: #e4e2db;
+  --border-focus: #1769e0;
+  --brand-cobalt: #1769e0;
+  --brand-cobalt-hover: #1255b8;
+  --mint-green: #16805b;
+  --mint-green-subtle: #edf7f2;
+  --amber-warning: #d97706;
+  --amber-subtle: #fef7ed;
+  --crimson-blocked: #dc2626;
+  --crimson-subtle: #fef2f2;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* Custom scrollbars and transitions */
+::selection {
+  background-color: #1769e0;
+  color: #ffffff;
+}
+
+.ag-theme-quartz {
+  --ag-header-background-color: #f7f6f2;
+  --ag-header-foreground-color: #091a2a;
+  --ag-header-cell-hover-background-color: #edebe4;
+  --ag-border-color: #e4e2db;
+  --ag-row-hover-color: #f6f5f0;
+  --ag-selected-row-background-color: #eef4fe;
+  font-family: inherit;
+  font-size: 13px;
 }

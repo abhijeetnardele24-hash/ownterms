@@ -84,7 +84,7 @@ export function verifyRightsReceipt(receipt: unknown): {
       expectedHash,
       tamperedFields: valid ? [] : ["payload_or_signature_mismatch"],
     };
-  } catch (err) {
+  } catch {
     return {
       valid: false,
       computedHash: "",
@@ -93,3 +93,4 @@ export function verifyRightsReceipt(receipt: unknown): {
     };
   }
 }
+

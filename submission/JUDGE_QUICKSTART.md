@@ -23,8 +23,14 @@ pnpm install
 # Run database seeds
 pnpm run seed
 
-# Run unit & policy tests
+# Run unit, integration & security regression tests (27 tests, <600ms)
 pnpm test
+
+# Evaluate live Google Gemini model intent extraction
+pnpm run test:live-ai
+
+# Run Playwright E2E browser verification
+pnpm run test:e2e
 
 # Start the application
 pnpm run dev
@@ -62,3 +68,4 @@ Open **[http://localhost:3000](http://localhost:3000)** in your browser.
    - Explore the AG Grid audit ledger.
    - View the live transaction recorded in real-time.
    - Explore the **"Rights Coverage"** custom visual widget showing channel and regional rights saturation.
+

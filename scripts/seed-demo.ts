@@ -13,3 +13,4 @@ for (const a of assets) {
 const ledger = store.getLedger();
 console.log(`✅ Initialized creator control room ledger with ${ledger.length} historical entries.`);
 console.log("🚀 OwnTerms seed complete.");
+

@@ -37,3 +37,4 @@
 - **Defensive Mitigation:**
   1. Every receipt includes a cryptographic `sha256Hash` computed across canonicalized JSON keys.
   2. Modifying even a single character in `scope`, `tier`, or `territory` causes immediate verification failure when submitted to the independent verifier (`/receipt/[receiptId]/verify`).
+

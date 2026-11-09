@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { extractIntendedUse, extractWithFallbackHeuristics } from "@/lib/ai/extract-intent";
 
-describe("extractIntendedUse - AI Intent Quarantine Layer", () => {
+describe("extractIntendedUse - AI Intent Quarantine Layer (Deterministic)", () => {
   const canonicalPrompt =
     "Use this night-market photograph in a paid Instagram campaign for 30 days in India and Singapore. Budget up to $80. Do not allow AI training.";
 
@@ -27,8 +27,8 @@ describe("extractIntendedUse - AI Intent Quarantine Layer", () => {
     expect(facts.budgetLimitCents).toBe(2500);
   });
 
-  it("extracts intended use through extractIntendedUse gracefully", async () => {
-    const facts = await extractIntendedUse(canonicalPrompt);
+  it("extracts intended use through extractIntendedUse deterministically", async () => {
+    const facts = await extractIntendedUse(canonicalPrompt, { forceFallback: true });
     expect(facts.rawRequest).toBe(canonicalPrompt);
     expect(facts.durationDays).toBe(30);
     expect(facts.budgetLimitCents).toBe(8000);

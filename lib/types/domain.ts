@@ -106,6 +106,41 @@ export const CompatibilityResultSchema = z.object({
 export type CompatibilityResult = z.infer<typeof CompatibilityResultSchema>;
 
 // ==============================================================================
+// 4b. Frozen Server-Side Purchase Intent
+// ==============================================================================
+
+export const PurchaseIntentStateSchema = z.enum([
+  "CREATED",
+  "AUTHORIZED",
+  "CAPTURED",
+  "SETTLED",
+  "FAILED",
+  "CANCELLED",
+]);
+export type PurchaseIntentState = z.infer<typeof PurchaseIntentStateSchema>;
+
+export const PurchaseIntentSchema = z.object({
+  id: z.string(),
+  assetId: z.string(),
+  assetVersion: z.string(),
+  policyId: z.string(),
+  policyVersion: z.string().default("1.0.0"),
+  normalizedUse: IntendedUseFactSchema,
+  priceCents: z.number().int().positive(),
+  currency: z.literal("USD"),
+  compatibilityResult: CompatibilityResultSchema,
+  policyHash: z.string(),
+  purchasePayloadHash: z.string(),
+  state: PurchaseIntentStateSchema,
+  createdAt: z.string(),
+  paypalOrderId: z.string().nullable(),
+  paypalCaptureId: z.string().nullable(),
+  paypalRequestId: z.string(),
+  provenance: z.enum(["LIVE_SANDBOX", "FIXTURE", "SIMULATED"]),
+});
+export type PurchaseIntent = z.infer<typeof PurchaseIntentSchema>;
+
+// ==============================================================================
 // 5. Rights Receipt & Settlement Types
 // ==============================================================================
 
@@ -155,6 +190,7 @@ export const LedgerEntrySchema = z.object({
   agentPrompt: z.string(),
   paypalCaptureId: z.string(),
   receiptHash: z.string(),
+  provenance: z.enum(["LIVE_SANDBOX", "FIXTURE", "SEEDED", "SIMULATED"]).default("SEEDED"),
   status: z.enum(["SETTLED", "ACTIVE", "EXPIRED"]),
 });
 export type LedgerEntry = z.infer<typeof LedgerEntrySchema>;
@@ -162,3 +198,4 @@ export type LedgerEntry = z.infer<typeof LedgerEntrySchema>;
 function numberOrString() {
   return z.union([z.number(), z.string()]);
 }
+

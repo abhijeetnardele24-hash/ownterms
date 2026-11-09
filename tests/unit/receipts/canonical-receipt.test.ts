@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   canonicalizeJson,
-  computeCanonicalSha256,
   mintRightsReceipt,
   verifyRightsReceipt,
 } from "@/lib/receipts/canonical-receipt";
@@ -77,3 +76,4 @@ describe("canonical-receipt - Cryptographic Rights Minting & Verification", () =
     expect(verification.valid).toBe(false);
   });
 });
+

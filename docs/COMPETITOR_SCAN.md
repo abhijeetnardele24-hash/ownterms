@@ -27,3 +27,4 @@ Autonomous agents (in marketing, design, code generation, and synthetic media) c
 | **Cryptographic Rights Receipt** | Static PDF invoice | Email notification | **Canonical SHA-256 Hash verifiable anywhere** |
 | **Creator Rights & Revenue Control Room** | Opaque monthly royalty reports | Basic stripe/paypal dashboard | **AG Grid / AG Studio with Rights Coverage visual matrix** |
 | **PayPal Sandbox Settlement** | Proprietary internal billing | Basic payment button | **Orders v2 REST + Read-back verification + Webhook integrity** |
+

@@ -25,7 +25,7 @@ export async function GET() {
         inquiriesProcessed: ledger.length + 12,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in /api/control-room/ledger:", error);
     return NextResponse.json(
       { error: "Failed to load control room ledger." },
@@ -33,3 +33,4 @@ export async function GET() {
     );
   }
 }
+

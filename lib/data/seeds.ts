@@ -272,6 +272,7 @@ export const INITIAL_LEDGER_ENTRIES: LedgerEntry[] = [
     agentPrompt: "Instagram ad campaign 30d in IN/SG budget $80",
     paypalCaptureId: "CAP_SANDBOX_7912489",
     receiptHash: "a1f8872b49c0d1279a09321ef9a8b92d6e43c8b1a2387140e698ef73214dae19",
+    provenance: "SEEDED",
     status: "ACTIVE",
   },
   {
@@ -286,6 +287,7 @@ export const INITIAL_LEDGER_ENTRIES: LedgerEntry[] = [
     agentPrompt: "Article on South Asian urban night life",
     paypalCaptureId: "CAP_SANDBOX_5109283",
     receiptHash: "b2c9983d50e1f2380b1a432fa0b9c03e7f54d9c2b3498251f709fa84325ebf20",
+    provenance: "SEEDED",
     status: "ACTIVE",
   },
   {
@@ -300,6 +302,8 @@ export const INITIAL_LEDGER_ENTRIES: LedgerEntry[] = [
     agentPrompt: "Display typography for mobile app rebranding",
     paypalCaptureId: "CAP_SANDBOX_4091823",
     receiptHash: "c3da094e61f203491c2b5430b1ca014f8065e0d3c4509362a810ab95436fc031",
+    provenance: "SEEDED",
     status: "ACTIVE",
   },
 ];
+

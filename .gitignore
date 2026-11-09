@@ -12,6 +12,18 @@
 
 # testing
 /coverage
+test-results/
+playwright-report/
+blob-report/
+
+# databases
+data/*.db
+data/*.db-shm
+data/*.db-wal
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
 
 # next.js
 /.next/

@@ -9,13 +9,16 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:live-ai": "tsx scripts/eval-live-model.ts",
     "test:e2e": "playwright test",
     "seed": "tsx scripts/seed-demo.ts"
   },
   "dependencies": {
     "@paypal/paypal-js": "^11.3.0",
+    "@types/better-sqlite3": "^9.6.0",
     "ag-grid-community": "^36.3.0",
     "ag-grid-react": "^36.3.0",
+    "better-sqlite3": "^13.0.3",
     "lucide-react": "^1.70.0",
     "next": "16.4.5",
     "react": "19.3.0",

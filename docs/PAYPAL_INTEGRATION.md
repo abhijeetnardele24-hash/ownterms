@@ -44,3 +44,4 @@ Client (Smart Buttons)          Next.js Backend (/api)          PayPal Sandbox A
 1. **Integer Minor Cents Representation:** All internal prices are tracked as integers (e.g., \$69.00 = `6900` cents). Conversion to PayPal's string decimal format (`"69.00"`) occurs only at the final API serialization boundary.
 2. **Metadata Binding via `custom_id`:** The PayPal order carries `custom_id` encoding `{ assetId, tierId, intentHash }`, binding the payment to the exact rights contract.
 3. **Read-Back Verification:** Before a Rights Receipt is minted, the server performs a `GET` request to PayPal Sandbox to verify that the capture amount, currency, and payee correspond precisely to the internal policy.
+

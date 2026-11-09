@@ -28,3 +28,4 @@
 ### [2:20 - 2:45] AG Grid Creator Control Room & Conclusion
 - **Visual:** Switch to `/control-room`. Demonstrate AG Grid sorting, search, revenue summary KPIs, and the "Rights Coverage" custom widget.
 - **Audio:** *"Finally, Mira tracks every autonomous license in her Creator Control Room, powered by AG Grid. She can audit every transaction in real-time and view her 'Rights Coverage' matrix to see where her work is deployed globally. OwnTerms connects creators, autonomous agents, and PayPal to build what's next in agentic commerce."*
+

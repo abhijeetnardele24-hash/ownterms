@@ -124,3 +124,4 @@ describe("evaluateLicense - Deterministic Rights Compatibility", () => {
     expect(result.violations.some((v) => v.toLowerCase().includes("territories"))).toBe(true);
   });
 });
+

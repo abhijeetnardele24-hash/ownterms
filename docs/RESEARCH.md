@@ -27,3 +27,4 @@
 - According to recent industry shifts, autonomous AI agents are becoming primary economic actors purchasing APIs, cloud compute, and digital media.
 - Intellectual Property licensing requires deterministic boundaries: rights granting must never be entrusted to non-deterministic generative models.
 - By separating extraction (AI) from authorization and pricing (code), OwnTerms provides an enterprise-safe architectural pattern.
+

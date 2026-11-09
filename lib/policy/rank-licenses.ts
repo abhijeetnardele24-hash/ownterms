@@ -38,3 +38,4 @@ export function rankLicenses(
     return a.policy.priceCents - b.policy.priceCents;
   });
 }
+
