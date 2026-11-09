@@ -1,0 +1,89 @@
+1
+00:00:00,000 --> 00:00:05,000
+Autonomous agents can create campaigns in seconds,
+but they still lack a safe way to license creator-owned work.
+
+2
+00:00:05,000 --> 00:00:13,000
+OwnTerms is a machine-readable rights and settlement rail
+for the agentic economy.
+
+3
+00:00:13,000 --> 00:00:21,000
+Creators define permissions and prices. Agents describe intended use.
+AI extracts facts, and deterministic code enforces policy.
+
+4
+00:00:21,000 --> 00:00:28,000
+Each successful clearance becomes
+a tamper-evident rights receipt.
+
+5
+00:00:28,000 --> 00:00:35,000
+This is Night Market Signals,
+an original project-owned demo asset.
+
+6
+00:00:35,000 --> 00:00:42,000
+The request: a 30-day Instagram campaign in India and Singapore,
+an $80 budget, and no AI training.
+
+7
+00:00:42,000 --> 00:00:49,000
+Gemini is quarantined to factual extraction only.
+This recorded run visibly labels the rate-limit fallback.
+
+8
+00:00:49,000 --> 00:00:56,000
+The model has zero authority over price,
+permissions, or payment.
+
+9
+00:00:56,000 --> 00:01:03,000
+The deterministic engine compares the request
+with creator-authored policies.
+
+10
+00:01:03,000 --> 00:01:10,000
+Editorial blocks paid ads. Extended is over budget.
+Commercial Social is the exact compatible tier at $69.
+
+11
+00:01:10,000 --> 00:01:18,000
+This recording uses the deterministic judge fixture,
+clearly labeled throughout.
+
+12
+00:01:18,000 --> 00:01:26,000
+The sandbox path uses official PayPal Smart Buttons,
+server-created Orders v2, buyer approval, and read-back verification.
+
+13
+00:01:26,000 --> 00:01:34,000
+Fixture data is never presented
+as live PayPal revenue.
+
+14
+00:01:34,000 --> 00:01:42,000
+Settlement creates a machine-readable receipt
+with granted scope and a canonical SHA-256 digest.
+
+15
+00:01:42,000 --> 00:01:49,000
+Change even one value and verification fails.
+Restore the original data and integrity passes again.
+
+16
+00:01:49,000 --> 00:01:56,000
+The AG Grid Community control room
+audits every license by provenance.
+
+17
+00:01:56,000 --> 00:02:03,000
+The rights coverage matrix shows exact channel
+and territory combinations already licensed.
+
+18
+00:02:03,000 --> 00:02:07,300
+Use creator work only after the terms are understood,
+the policy matches, and the license is settled.

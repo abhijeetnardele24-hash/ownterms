@@ -1,0 +1,17 @@
+Autonomous agents can create campaigns in seconds, but they still lack a safe way to license the creator-owned work they use.
+
+OwnTerms is a machine-readable rights and settlement rail for the agentic economy. Creators define permissions and prices. Agents describe intended use. AI extracts facts, deterministic code enforces policy, and each successful clearance becomes a tamper-evident rights receipt.
+
+This is Night Market Signals, an original project-owned demo asset. The agent requests a paid Instagram campaign for thirty days in India and Singapore, with an eighty-dollar budget and no AI training.
+
+Gemini is quarantined to factual extraction only. In this recorded run, the provider is rate-limited, so OwnTerms visibly labels the heuristic fallback. Either way, the model has zero authority over price, permissions, or payment.
+
+The deterministic engine compares the request with creator-authored policies. Editorial is blocked because paid advertising is prohibited. Extended is over budget. Commercial Social is the exact compatible tier at sixty-nine dollars.
+
+This recording uses OwnTerms' deterministic judge fixture, clearly labeled throughout. The separate sandbox path uses the official PayPal JavaScript SDK and Smart Buttons, server-created Orders v2, buyer approval, capture, and provider read-back verification. Fixture data is never presented as live PayPal revenue.
+
+Settlement creates a machine-readable rights receipt containing the asset, granted scope, order and capture references, and a canonical SHA-two-fifty-six digest. Change even one value and verification fails immediately. Restore the original data and integrity passes again.
+
+Finally, the creator control room uses AG Grid Community to audit every license. Revenue is separated by live sandbox, fixture, and seeded provenance, while the rights coverage matrix shows the exact channel and territory combinations already licensed.
+
+OwnTerms gives autonomous agents a simple rule: use creator work only after the terms are understood, the policy matches, and the license is settled.

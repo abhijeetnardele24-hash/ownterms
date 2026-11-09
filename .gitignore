@@ -36,6 +36,14 @@ data/*.db-wal
 .DS_Store
 *.pem
 
+# generated demo video artifacts
+submission/video/capture/
+submission/video/*.mp4
+submission/video/*.webm
+submission/video/*.wav
+submission/video/*_sheet.png
+submission/video/*_adjusted.srt
+
 # debug
 npm-debug.log*
 yarn-debug.log*
